@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'frontend/**'
+      - 'k8s/fe/**'
 
 env:
   ECR_REGISTRY: 405087531929.dkr.ecr.us-east-1.amazonaws.com
