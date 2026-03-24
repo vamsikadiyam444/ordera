@@ -32,4 +32,4 @@ def get_db():
 
 
 def create_tables():
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine) # Create tables based on models defined in the app
