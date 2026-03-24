@@ -7,7 +7,7 @@ on:
       - 'frontend/**'
 
 env:
-  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+  ECR_REGISTRY: 405087531929.dkr.ecr.us-east-1.amazonaws.com
   ECR_REPOSITORY: ordera-app
   IMAGE_TAG: frontend-${{ github.sha }}
 
@@ -22,7 +22,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: us-east-1
 
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
