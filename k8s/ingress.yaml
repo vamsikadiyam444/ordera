@@ -4,15 +4,18 @@ metadata:
   name: ordera-ingress
   namespace: ordera
   annotations:
-    kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/healthcheck-path: /health
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:405087531929:certificate/b9c3bf75-9504-4ea6-945e-4804bad7e3a5
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80, "HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
     alb.ingress.kubernetes.io/tags: Environment=testing,Project=ordera-app
 spec:
+  ingressClassName: alb
   rules:
-    - http:
+    - host: payvya.com
+      http:
         paths:
           - path: /api
             pathType: Prefix
