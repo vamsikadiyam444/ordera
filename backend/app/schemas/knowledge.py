@@ -10,6 +10,7 @@ class DocumentResponse(BaseModel):
     doc_type: str
     chunk_count: int
     created_at: datetime
+    menu_items_extracted: Optional[int] = None
 
     class Config:
         from_attributes = True

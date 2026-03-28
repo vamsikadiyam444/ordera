@@ -60,12 +60,13 @@ export const ordersApi = {
 export const knowledgeApi = {
   upload: (formData) =>
     api.post('/knowledge/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: { 'Content-Type': undefined },  // Let axios set multipart boundary automatically
       timeout: 60000,
     }),
   listDocuments: () => api.get('/knowledge/documents'),
   deleteDocument: (id) => api.delete(`/knowledge/documents/${id}`),
   search: (query) => api.get('/knowledge/search', { params: { query } }),
+  syncMenu: () => api.post('/knowledge/sync-menu'),
 }
 
 // Dashboard

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import Layout from '../components/Layout'
-import { menuApi } from '../services/api'
+import { menuApi, knowledgeApi } from '../services/api'
 import { PlusIcon, SearchIcon, SpinnerIcon, TrashIcon, CheckIcon, XIcon } from '../components/Icons'
 
 const EMPTY_FORM = { category: '', name: '', description: '', price: '', available: true }
@@ -384,6 +384,7 @@ export default function MenuManager() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [editId, setEditId] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState(null)
   const [showModal, setShowModal] = useState(false)
@@ -474,13 +475,6 @@ export default function MenuManager() {
     setTimeout(() => setMessage(null), 3000)
   }
 
-  const handleSeed = async () => {
-    await menuApi.seed()
-    await load()
-    setMessage({ type: 'success', text: 'Demo menu loaded' })
-    setTimeout(() => setMessage(null), 3000)
-  }
-
   const openAddModal = () => {
     setEditId(null)
     setForm(EMPTY_FORM)
@@ -505,21 +499,46 @@ export default function MenuManager() {
             </p>
           </div>
           <div className="flex items-center gap-2.5">
-            {items.length === 0 && (
-              <button
-                onClick={handleSeed}
-                className="py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200"
-                style={{
-                  background: 'transparent',
-                  color: 'var(--text-2)',
-                  border: '1.5px solid var(--border)',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#0071e3'; e.currentTarget.style.color = '#0071e3' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-2)' }}
+            <button
+              onClick={async () => {
+                setSyncing(true)
+                try {
+                  const res = await knowledgeApi.syncMenu()
+                  const { inserted } = res.data
+                  await load()
+                  setMessage({ type: 'success', text: inserted > 0 ? `Synced ${inserted} items from Knowledge Base` : 'Menu is up to date' })
+                  setTimeout(() => setMessage(null), 4000)
+                } catch {
+                  await load()
+                } finally {
+                  setSyncing(false)
+                }
+              }}
+              disabled={syncing || loading}
+              className="flex items-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200"
+              style={{
+                background: 'var(--card-bg)',
+                border: '1.5px solid var(--border)',
+                color: 'var(--text-2)',
+                boxShadow: 'var(--shadow-sm)',
+                opacity: syncing || loading ? 0.6 : 1,
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = '#0071e3'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+              title="Sync menu items from Knowledge Base"
+            >
+              <svg
+                width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }}
               >
-                Load Demo Menu
-              </button>
-            )}
+                <path d="M21 2v6h-6" />
+                <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                <path d="M3 22v-6h6" />
+                <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+              </svg>
+              Sync from KB
+            </button>
             <button
               onClick={openAddModal}
               className="flex items-center gap-2 py-2.5 px-5 rounded-xl text-sm font-semibold text-white transition-all duration-200"
@@ -647,25 +666,16 @@ export default function MenuManager() {
               {search ? 'No items found' : 'Your menu is empty'}
             </h3>
             <p className="text-sm mb-5" style={{ color: 'var(--text-3)' }}>
-              {search ? 'Try a different search term' : 'Add your first item or load a demo menu to get started.'}
+              {search ? 'Try a different search term' : 'Upload your menu in the Knowledge Base to auto-import items, or add them manually.'}
             </p>
             {!search && (
-              <div className="flex items-center justify-center gap-3">
-                <button
-                  onClick={handleSeed}
-                  className="py-2.5 px-5 rounded-xl text-sm font-semibold transition-colors"
-                  style={{ background: 'var(--border)', color: 'var(--text-2)' }}
-                >
-                  Load Demo Menu
-                </button>
-                <button
-                  onClick={openAddModal}
-                  className="flex items-center gap-2 py-2.5 px-5 rounded-xl text-sm font-semibold text-white"
-                  style={{ background: 'linear-gradient(145deg, #0077ED, #0071e3)' }}
-                >
-                  <PlusIcon size={14} /> Add First Item
-                </button>
-              </div>
+              <button
+                onClick={openAddModal}
+                className="flex items-center gap-2 py-2.5 px-5 rounded-xl text-sm font-semibold text-white"
+                style={{ background: 'linear-gradient(145deg, #0077ED, #0071e3)' }}
+              >
+                <PlusIcon size={14} /> Add First Item
+              </button>
             )}
           </div>
         ) : (

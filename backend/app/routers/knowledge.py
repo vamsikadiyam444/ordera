@@ -1,14 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
 from sqlalchemy.orm import Session
 from typing import List
+import logging
 from app.database import get_db
+
+logger = logging.getLogger(__name__)
 from app.models.document import Document, KnowledgeChunk
+from app.models.menu_item import MenuItem
 from app.models.restaurant import Restaurant
 from app.schemas.knowledge import DocumentResponse, KnowledgeSearchResult
 from app.middleware.auth import get_current_owner
 from app.models.owner import Owner
 from app.services.document_service import extract_text_sync
 from app.services.rag_service import chunk_text, store_chunks, keyword_search
+from app.services.ai_engine import extract_menu_items
 
 router = APIRouter(prefix="/api/knowledge", tags=["knowledge"])
 
@@ -70,7 +75,44 @@ def upload_document(
         document.chunk_count = count
         db.commit()
         db.refresh(document)
-        return document
+
+        # Auto-extract menu items when a menu document is uploaded
+        menu_items_extracted = None
+        if doc_type == "menu":
+            try:
+                logger.info("Starting menu item extraction for document: %s (text length: %d)", filename, len(text))
+                extracted = extract_menu_items(text)
+                logger.info("Extracted %d items from menu document", len(extracted))
+                inserted = 0
+                for item in extracted:
+                    name = item.get("name", "").strip()
+                    if not name:
+                        continue
+                    db.add(MenuItem(
+                        restaurant_id=restaurant.id,
+                        category=item.get("category", "General").strip(),
+                        name=name,
+                        description=item.get("description") or None,
+                        price=float(item.get("price", 0) or 0),
+                        available=True,
+                    ))
+                    inserted += 1
+                db.commit()
+                menu_items_extracted = inserted
+                logger.info("Inserted %d menu items into DB", inserted)
+            except Exception as exc:
+                logger.error("Menu item extraction failed (document still saved): %s", exc)
+                menu_items_extracted = 0
+
+        return {
+            "id": document.id,
+            "owner_id": document.owner_id,
+            "filename": document.filename,
+            "doc_type": document.doc_type,
+            "chunk_count": document.chunk_count,
+            "created_at": document.created_at,
+            "menu_items_extracted": menu_items_extracted,
+        }
     except HTTPException:
         db.rollback()
         raise
@@ -102,6 +144,54 @@ def delete_document(
     db.delete(doc)    # Cascades to KnowledgeChunks
     db.commit()
     return {"message": "Document and its chunks deleted"}
+
+
+@router.post("/sync-menu")
+def sync_menu_from_knowledge(
+    db: Session = Depends(get_db),
+    current_owner: Owner = Depends(get_current_owner),
+):
+    """Re-extract menu items from all uploaded menu documents."""
+    restaurant = db.query(Restaurant).filter(Restaurant.owner_id == current_owner.id).first()
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+
+    menu_docs = db.query(Document).filter(
+        Document.owner_id == current_owner.id,
+        Document.doc_type == "menu",
+    ).all()
+
+    if not menu_docs:
+        return {"inserted": 0, "message": "No menu documents found in knowledge base"}
+
+    # Clear existing menu items before re-importing
+    db.query(MenuItem).filter(MenuItem.restaurant_id == restaurant.id).delete()
+    db.commit()
+
+    total = 0
+    for doc in menu_docs:
+        if not doc.content or not doc.content.strip():
+            continue
+        try:
+            items = extract_menu_items(doc.content)
+            for item in items:
+                name = item.get("name", "").strip()
+                if not name:
+                    continue
+                db.add(MenuItem(
+                    restaurant_id=restaurant.id,
+                    category=item.get("category", "General").strip(),
+                    name=name,
+                    description=item.get("description") or None,
+                    price=float(item.get("price", 0) or 0),
+                    available=True,
+                ))
+                total += 1
+            db.commit()
+        except Exception as exc:
+            logger.error("sync-menu extraction failed for doc %s: %s", doc.filename, exc)
+
+    return {"inserted": total, "message": f"Menu synced: {total} items imported from {len(menu_docs)} document(s)"}
 
 
 @router.get("/search", response_model=List[KnowledgeSearchResult])

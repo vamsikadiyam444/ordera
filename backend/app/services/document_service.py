@@ -46,12 +46,25 @@ def _extract_pdf(content: bytes) -> str:
 
 
 def _extract_docx(content: bytes) -> str:
-    """Extract text from DOCX using python-docx."""
+    """Extract text from DOCX using python-docx — includes paragraphs AND table cells."""
     try:
         from docx import Document as DocxDocument
         doc = DocxDocument(io.BytesIO(content))
-        paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
-        return "\n\n".join(paragraphs)
+        lines = []
+
+        # Paragraphs
+        for p in doc.paragraphs:
+            if p.text.strip():
+                lines.append(p.text.strip())
+
+        # Tables — critical for menu documents where items are in table rows
+        for table in doc.tables:
+            for row in table.rows:
+                cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+                if cells:
+                    lines.append(" | ".join(cells))
+
+        return "\n".join(lines)
     except ImportError:
         raise RuntimeError("python-docx not installed. Run: pip install python-docx")
     except Exception as e:

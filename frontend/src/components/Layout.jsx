@@ -60,15 +60,15 @@ export default function Layout({ children }) {
           <div>
             <div
               className="font-bold text-sm leading-tight"
-              style={{ color: 'rgba(255,255,255,0.92)' }}
+              style={{ color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.03em' }}
             >
-              AI Restaurant
+              Ringa
             </div>
             <div
               className="text-xs leading-tight mt-0.5"
               style={{ color: 'rgba(255,255,255,0.3)' }}
             >
-              Agent Platform
+              Never miss a customer call again
             </div>
           </div>
         </div>

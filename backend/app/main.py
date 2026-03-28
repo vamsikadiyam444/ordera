@@ -104,3 +104,34 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+
+@app.get("/api/health/ai")
+def health_ai():
+    """Check which AI provider is active and do a live ping test."""
+    from app.services.ai_engine import _groq_client, _anthropic_client, GROQ_FAST_MODEL, HAIKU_MODEL
+    import time
+
+    if _groq_client:
+        provider = "groq"
+        model = GROQ_FAST_MODEL
+    elif _anthropic_client:
+        provider = "anthropic"
+        model = HAIKU_MODEL
+    else:
+        return {"provider": "none", "status": "error", "message": "No API key configured"}
+
+    try:
+        start = time.time()
+        from app.services.ai_engine import _chat
+        reply = _chat(fast=True, system="", messages=[{"role": "user", "content": "Reply with exactly: OK"}], max_tokens=5)
+        latency_ms = round((time.time() - start) * 1000)
+        return {
+            "provider": provider,
+            "model": model,
+            "status": "ok",
+            "reply": reply.strip(),
+            "latency_ms": latency_ms,
+        }
+    except Exception as e:
+        return {"provider": provider, "model": model, "status": "error", "message": str(e)}

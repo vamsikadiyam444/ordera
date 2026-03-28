@@ -1,5 +1,9 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
+import os
+
+# Always resolve .env relative to this file (backend/.env), regardless of working directory
+_ENV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
 
 
 class Settings(BaseSettings):
@@ -14,6 +18,9 @@ class Settings(BaseSettings):
 
     # Anthropic
     ANTHROPIC_API_KEY: str = ""
+
+    # Groq (optional — if set, Groq is used instead of Claude)
+    GROQ_API_KEY: str = ""
 
     # Telnyx
     TELNYX_API_KEY: str = ""
@@ -46,7 +53,7 @@ class Settings(BaseSettings):
     SENTRY_DSN: Optional[str] = None
 
     class Config:
-        env_file = ".env"
+        env_file = _ENV_FILE
         extra = "ignore"
 
 

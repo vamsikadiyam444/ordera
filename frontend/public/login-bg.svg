@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <!-- Gradients -->
+    <radialGradient id="candleGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.45"/>
+      <stop offset="60%" stop-color="#f59e0b" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="cyanGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.35"/>
+      <stop offset="50%" stop-color="#06b6d4" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="violetGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.25"/>
+      <stop offset="55%" stop-color="#8b5cf6" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="amberGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.22"/>
+      <stop offset="55%" stop-color="#f59e0b" stop-opacity="0.07"/>
+      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="transparent"/>
+      <stop offset="80%" stop-color="#03030a" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#03030a" stop-opacity="0.82"/>
+    </radialGradient>
+    <linearGradient id="rightFade" x1="55%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#03030a" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#03030a" stop-opacity="0.65"/>
+    </linearGradient>
+    <linearGradient id="leftFade" x1="0%" y1="0%" x2="30%" y2="0%">
+      <stop offset="0%" stop-color="#03030a" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#03030a" stop-opacity="0"/>
+    </linearGradient>
+    <!-- Filters -->
+    <filter id="b4" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+    <filter id="b10" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+    <filter id="b20" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="20"/>
+    </filter>
+    <filter id="b40" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="40"/>
+    </filter>
+    <!-- Floor pattern -->
+    <pattern id="floor" x="0" y="0" width="64" height="64" patternUnits="userSpaceOnUse">
+      <rect width="64" height="64" fill="none" stroke="rgba(255,255,255,0.027)" stroke-width="0.6"/>
+    </pattern>
+  </defs>
+
+  <!-- ── BASE ── -->
+  <rect width="1920" height="1080" fill="#03030a"/>
+  <rect width="1920" height="1080" fill="url(#floor)"/>
+
+  <!-- ── AMBIENT COLOUR POOLS ── -->
+  <!-- Cyan — phone/customer side -->
+  <ellipse cx="420" cy="460" rx="520" ry="420" fill="url(#cyanGlow)" filter="url(#b40)"/>
+  <!-- Violet — centre/AI -->
+  <ellipse cx="960" cy="520" rx="580" ry="460" fill="url(#violetGlow)" filter="url(#b40)"/>
+  <!-- Amber — kitchen side -->
+  <ellipse cx="1560" cy="660" rx="480" ry="380" fill="url(#amberGlow)" filter="url(#b40)"/>
+
+  <!-- ── FLOOR ACCENT LINES ── -->
+  <g stroke="rgba(255,255,255,0.018)" stroke-width="0.6" fill="none">
+    <line x1="0" y1="270" x2="1920" y2="270"/>
+    <line x1="0" y1="540" x2="1920" y2="540"/>
+    <line x1="0" y1="810" x2="1920" y2="810"/>
+    <line x1="480" y1="0" x2="480" y2="1080"/>
+    <line x1="960" y1="0" x2="960" y2="1080"/>
+    <line x1="1440" y1="0" x2="1440" y2="1080"/>
+  </g>
+
+  <!-- ══════════════════════════════════════ -->
+  <!--           RESTAURANT TABLES           -->
+  <!-- ══════════════════════════════════════ -->
+
+  <!-- TABLE A — top-left -->
+  <ellipse cx="260" cy="180" rx="88" ry="58" fill="#0b0b18" stroke="rgba(255,255,255,0.07)" stroke-width="1.2"/>
+  <circle cx="260" cy="180" r="140" fill="url(#candleGlow)" filter="url(#b20)" opacity="0.7"/>
+  <!-- chairs -->
+  <path d="M175,162 Q162,170 162,182 Q162,194 175,202" fill="none" stroke="rgba(255,255,255,0.055)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M345,162 Q358,170 358,182 Q358,194 345,202" fill="none" stroke="rgba(255,255,255,0.055)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M242,118 Q250,106 260,106 Q270,106 278,118" fill="none" stroke="rgba(255,255,255,0.055)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M242,242 Q250,254 260,254 Q270,254 278,242" fill="none" stroke="rgba(255,255,255,0.055)" stroke-width="10" stroke-linecap="round"/>
+  <!-- plates -->
+  <circle cx="240" cy="190" r="16" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+  <circle cx="240" cy="190" r="10" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.6"/>
+  <circle cx="282" cy="190" r="16" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+  <circle cx="282" cy="190" r="10" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.6"/>
+  <!-- candle -->
+  <rect x="257" y="166" width="6" height="14" rx="1" fill="#0e0e20" stroke="rgba(251,191,36,0.3)" stroke-width="0.8"/>
+  <ellipse cx="260" cy="165" rx="5" ry="7" fill="#fbbf24" filter="url(#b4)" opacity="0.9"/>
+  <ellipse cx="260" cy="165" rx="2" ry="3" fill="#fff8e0" opacity="0.95"/>
+  <!-- wine glasses -->
+  <path d="M228,174 Q226,180 229,183 L224,192" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1" stroke-linecap="round"/>
+  <path d="M294,174 Q292,180 295,183 L290,192" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1" stroke-linecap="round"/>
+
+  <!-- TABLE B — left side, mid-height -->
+  <ellipse cx="200" cy="620" rx="92" ry="62" fill="#0a0a16" stroke="rgba(255,255,255,0.065)" stroke-width="1.2"/>
+  <circle cx="200" cy="620" r="150" fill="url(#candleGlow)" filter="url(#b20)" opacity="0.55"/>
+  <path d="M108,602 Q95,610 95,622 Q95,634 108,642" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M292,602 Q305,610 305,622 Q305,634 292,642" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M182,556 Q190,543 200,543 Q210,543 218,556" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M182,684 Q190,697 200,697 Q210,697 218,684" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="178" cy="630" r="17" fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
+  <circle cx="222" cy="630" r="17" fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
+  <rect x="197" y="602" width="6" height="16" rx="1" fill="#0e0e20" stroke="rgba(251,191,36,0.28)" stroke-width="0.8"/>
+  <ellipse cx="200" cy="601" rx="5" ry="7" fill="#fbbf24" filter="url(#b4)" opacity="0.85"/>
+  <ellipse cx="200" cy="601" rx="2" ry="3" fill="#fff8e0" opacity="0.9"/>
+
+  <!-- TABLE C — top-centre -->
+  <ellipse cx="760" cy="140" rx="80" ry="54" fill="#0b0b18" stroke="rgba(255,255,255,0.06)" stroke-width="1.2"/>
+  <circle cx="760" cy="140" r="120" fill="url(#candleGlow)" filter="url(#b20)" opacity="0.45"/>
+  <path d="M678,122 Q665,130 665,142 Q665,154 678,162" fill="none" stroke="rgba(255,255,255,0.045)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M842,122 Q855,130 855,142 Q855,154 842,162" fill="none" stroke="rgba(255,255,255,0.045)" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="740" cy="150" r="14" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <circle cx="780" cy="150" r="14" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <rect x="757" y="124" width="6" height="14" rx="1" fill="#0e0e20" stroke="rgba(251,191,36,0.25)" stroke-width="0.8"/>
+  <ellipse cx="760" cy="123" rx="4.5" ry="6" fill="#fbbf24" filter="url(#b4)" opacity="0.8"/>
+
+  <!-- TABLE D — bottom-centre -->
+  <ellipse cx="720" cy="940" rx="86" ry="58" fill="#0a0a16" stroke="rgba(255,255,255,0.055)" stroke-width="1.2"/>
+  <circle cx="720" cy="940" r="130" fill="url(#candleGlow)" filter="url(#b20)" opacity="0.4"/>
+  <circle cx="700" cy="950" r="15" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+  <circle cx="740" cy="950" r="15" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+  <rect x="717" y="920" width="6" height="14" rx="1" fill="#0e0e20" stroke="rgba(251,191,36,0.22)" stroke-width="0.8"/>
+  <ellipse cx="720" cy="919" rx="4.5" ry="6" fill="#fbbf24" filter="url(#b4)" opacity="0.75"/>
+
+  <!-- TABLE E — far right background -->
+  <ellipse cx="1700" cy="280" rx="76" ry="52" fill="#0a0a16" stroke="rgba(255,255,255,0.055)" stroke-width="1.2"/>
+  <circle cx="1700" cy="280" r="115" fill="url(#candleGlow)" filter="url(#b20)" opacity="0.38"/>
+  <circle cx="1680" cy="290" r="13" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+  <circle cx="1720" cy="290" r="13" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+  <ellipse cx="1700" cy="270" rx="4" ry="5.5" fill="#fbbf24" filter="url(#b4)" opacity="0.7"/>
+
+  <!-- TABLE F — right, mid -->
+  <ellipse cx="1820" cy="700" rx="70" ry="48" fill="#0a0a16" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+  <circle cx="1820" cy="700" r="110" fill="url(#candleGlow)" filter="url(#b20)" opacity="0.3"/>
+  <ellipse cx="1820" cy="690" rx="4" ry="5" fill="#fbbf24" filter="url(#b4)" opacity="0.65"/>
+
+
+  <!-- ══════════════════════════════════════ -->
+  <!--        PHONE — CUSTOMER NODE          -->
+  <!-- ══════════════════════════════════════ -->
+
+  <!-- Signal rings -->
+  <circle cx="500" cy="500" r="160" fill="none" stroke="rgba(34,211,238,0.07)" stroke-width="1.2"/>
+  <circle cx="500" cy="500" r="215" fill="none" stroke="rgba(34,211,238,0.05)" stroke-width="0.9"/>
+  <circle cx="500" cy="500" r="275" fill="none" stroke="rgba(34,211,238,0.03)" stroke-width="0.7"/>
+  <circle cx="500" cy="500" r="340" fill="none" stroke="rgba(34,211,238,0.018)" stroke-width="0.5"/>
+
+  <!-- Glow core -->
+  <circle cx="500" cy="500" r="100" fill="rgba(34,211,238,0.07)" filter="url(#b20)"/>
+  <circle cx="500" cy="500" r="60" fill="rgba(34,211,238,0.12)" filter="url(#b10)"/>
+
+  <!-- Phone body -->
+  <rect x="464" y="448" width="72" height="104" rx="13" fill="#080818" stroke="rgba(34,211,238,0.45)" stroke-width="1.6"/>
+  <rect x="471" y="458" width="58" height="76" rx="7" fill="rgba(34,211,238,0.05)" stroke="rgba(34,211,238,0.18)" stroke-width="0.7"/>
+  <!-- screen lines -->
+  <line x1="478" y1="470" x2="522" y2="470" stroke="rgba(34,211,238,0.25)" stroke-width="1.2"/>
+  <line x1="478" y1="480" x2="522" y2="480" stroke="rgba(34,211,238,0.15)" stroke-width="0.8"/>
+  <line x1="478" y1="490" x2="510" y2="490" stroke="rgba(34,211,238,0.12)" stroke-width="0.8"/>
+  <!-- Incoming call badge -->
+  <rect x="474" y="498" width="52" height="24" rx="5" fill="rgba(34,211,238,0.12)" stroke="rgba(34,211,238,0.3)" stroke-width="0.8"/>
+  <circle cx="483" cy="510" r="4" fill="#22d3ee" opacity="0.8"/>
+  <line x1="491" y1="506" x2="517" y2="506" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+  <line x1="491" y1="513" x2="512" y2="513" stroke="rgba(255,255,255,0.18)" stroke-width="0.9"/>
+  <!-- home button -->
+  <circle cx="500" cy="540" r="5" fill="none" stroke="rgba(34,211,238,0.35)" stroke-width="1"/>
+  <!-- label -->
+  <text x="500" y="578" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="700" fill="rgba(34,211,238,0.4)" letter-spacing="3">CUSTOMER</text>
+
+
+  <!-- ══════════════════════════════════════ -->
+  <!--       RINGA AI — CENTRE NODE          -->
+  <!-- ══════════════════════════════════════ -->
+
+  <!-- Hexagon glow -->
+  <circle cx="960" cy="510" r="110" fill="rgba(139,92,246,0.08)" filter="url(#b40)"/>
+  <circle cx="960" cy="510" r="70" fill="rgba(167,139,250,0.12)" filter="url(#b20)"/>
+
+  <!-- Outer hexagon -->
+  <polygon points="960,438 1018,471 1018,537 960,570 902,537 902,471"
+    fill="#07071a" stroke="rgba(167,139,250,0.38)" stroke-width="1.6"/>
+  <!-- Inner hex ring -->
+  <polygon points="960,450 1006,474 1006,524 960,548 914,524 914,474"
+    fill="rgba(139,92,246,0.04)" stroke="rgba(167,139,250,0.14)" stroke-width="0.7"/>
+
+  <!-- Microphone icon -->
+  <g transform="translate(942,472)" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.88">
+    <rect x="11" y="1" width="14" height="22" rx="7"/>
+    <path d="M5 17.5A19 19 0 0018 24.5a19 19 0 0013-7"/>
+    <line x1="18" y1="24.5" x2="18" y2="31"/>
+    <line x1="12" y1="31" x2="24" y2="31"/>
+  </g>
+
+  <!-- label -->
+  <text x="960" y="596" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="700" fill="rgba(167,139,250,0.45)" letter-spacing="3">RINGA AI</text>
+
+
+  <!-- ══════════════════════════════════════ -->
+  <!--     FLOW CONNECTIONS (data paths)     -->
+  <!-- ══════════════════════════════════════ -->
+
+  <!-- Phone → Ringa — cyan dashes -->
+  <path d="M573,495 Q720,448 900,487" fill="none" stroke="rgba(34,211,238,0.22)" stroke-width="1.4" stroke-dasharray="9 7"/>
+  <path d="M573,495 Q720,448 900,487" fill="none" stroke="rgba(34,211,238,0.1)" stroke-width="5" filter="url(#b4)"/>
+  <!-- data packet dots -->
+  <circle cx="680" cy="462" r="5" fill="#22d3ee" filter="url(#b4)" opacity="0.75"/>
+  <circle cx="630" cy="474" r="3.5" fill="#22d3ee" filter="url(#b4)" opacity="0.45"/>
+  <circle cx="790" cy="450" r="3" fill="#22d3ee" filter="url(#b4)" opacity="0.3"/>
+
+  <!-- Ringa → Kitchen — amber dashes -->
+  <path d="M1020,518 Q1200,535 1358,648" fill="none" stroke="rgba(251,191,36,0.22)" stroke-width="1.4" stroke-dasharray="9 7"/>
+  <path d="M1020,518 Q1200,535 1358,648" fill="none" stroke="rgba(251,191,36,0.10)" stroke-width="5" filter="url(#b4)"/>
+  <!-- data packet dots -->
+  <circle cx="1140" cy="527" r="5" fill="#fbbf24" filter="url(#b4)" opacity="0.75"/>
+  <circle cx="1090" cy="522" r="3.5" fill="#fbbf24" filter="url(#b4)" opacity="0.45"/>
+  <circle cx="1240" cy="540" r="3" fill="#fbbf24" filter="url(#b4)" opacity="0.3"/>
+
+
+  <!-- ══════════════════════════════════════ -->
+  <!--       KITCHEN PASS-THROUGH            -->
+  <!-- ══════════════════════════════════════ -->
+
+  <!-- Counter body -->
+  <rect x="1340" y="618" width="290" height="168" rx="10" fill="#07070f" stroke="rgba(251,191,36,0.18)" stroke-width="1.5"/>
+  <!-- Counter top rail -->
+  <rect x="1340" y="618" width="290" height="14" rx="4" fill="#0c0c1a" stroke="rgba(251,191,36,0.28)" stroke-width="1"/>
+  <!-- Window opening -->
+  <rect x="1358" y="640" width="254" height="82" rx="7" fill="rgba(251,191,36,0.04)" stroke="rgba(251,191,36,0.14)" stroke-width="1"/>
+  <!-- Heat lamp -->
+  <ellipse cx="1485" cy="642" rx="55" ry="16" fill="rgba(251,191,36,0.15)" filter="url(#b10)"/>
+  <circle cx="1485" cy="634" r="8" fill="rgba(251,191,36,0.4)" filter="url(#b4)"/>
+  <circle cx="1485" cy="634" r="3.5" fill="#fff8e0" opacity="0.9"/>
+  <!-- Plates on counter -->
+  <circle cx="1390" cy="680" r="24" fill="#0b0b1a" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+  <circle cx="1390" cy="680" r="16" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.7"/>
+  <circle cx="1390" cy="680" r="7" fill="rgba(251,191,36,0.08)"/>
+  <!-- Order ticket / KDS screen -->
+  <rect x="1440" y="650" width="60" height="58" rx="5" fill="#0a0a1c" stroke="rgba(251,191,36,0.28)" stroke-width="1"/>
+  <rect x="1443" y="654" width="54" height="10" rx="2" fill="rgba(251,191,36,0.14)"/>
+  <line x1="1448" y1="671" x2="1494" y2="671" stroke="rgba(255,255,255,0.16)" stroke-width="1.4"/>
+  <line x1="1448" y1="679" x2="1494" y2="679" stroke="rgba(255,255,255,0.11)" stroke-width="1"/>
+  <line x1="1448" y1="687" x2="1480" y2="687" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <line x1="1448" y1="695" x2="1488" y2="695" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <!-- Checkmark on ticket -->
+  <circle cx="1519" cy="660" r="9" fill="rgba(251,191,36,0.2)" stroke="rgba(251,191,36,0.5)" stroke-width="1"/>
+  <polyline points="1514,660 1518,664 1525,655" fill="none" stroke="#fbbf24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Kitchen glow -->
+  <circle cx="1485" cy="700" r="130" fill="url(#amberGlow)" filter="url(#b20)" opacity="0.8"/>
+  <!-- label -->
+  <text x="1485" y="810" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="700" fill="rgba(251,191,36,0.35)" letter-spacing="3">KITCHEN</text>
+
+
+  <!-- ══════════════════════════════════════ -->
+  <!--         BAR / COUNTER (top-right)     -->
+  <!-- ══════════════════════════════════════ -->
+
+  <rect x="1580" y="60" width="320" height="10" rx="5" fill="#0c0c1a" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <rect x="1580" y="82" width="320" height="110" rx="7" fill="#060610" stroke="rgba(255,255,255,0.04)" stroke-width="0.8"/>
+  <!-- bar stools -->
+  <circle cx="1640" cy="78" r="18" fill="#0a0a18" stroke="rgba(255,255,255,0.055)" stroke-width="1"/>
+  <circle cx="1700" cy="78" r="18" fill="#0a0a18" stroke="rgba(255,255,255,0.055)" stroke-width="1"/>
+  <circle cx="1760" cy="78" r="18" fill="#0a0a18" stroke="rgba(255,255,255,0.055)" stroke-width="1"/>
+  <circle cx="1820" cy="78" r="18" fill="#0a0a18" stroke="rgba(255,255,255,0.055)" stroke-width="1"/>
+  <!-- bottles -->
+  <rect x="1600" y="88" width="14" height="52" rx="4" fill="#080812" stroke="rgba(167,139,250,0.18)" stroke-width="0.8"/>
+  <rect x="1603" y="76" width="8" height="16" rx="3" fill="#080812" stroke="rgba(167,139,250,0.14)" stroke-width="0.8"/>
+  <rect x="1622" y="92" width="12" height="46" rx="4" fill="#080812" stroke="rgba(34,211,238,0.14)" stroke-width="0.8"/>
+  <rect x="1625" y="80" width="6" height="14" rx="3" fill="#080812" stroke="rgba(34,211,238,0.10)" stroke-width="0.8"/>
+  <rect x="1642" y="90" width="13" height="50" rx="4" fill="#080812" stroke="rgba(251,191,36,0.14)" stroke-width="0.8"/>
+  <!-- glass reflections on bar top -->
+  <ellipse cx="1700" cy="84" rx="8" ry="4" fill="rgba(255,255,255,0.04)"/>
+  <ellipse cx="1740" cy="84" rx="8" ry="4" fill="rgba(255,255,255,0.04)"/>
+
+
+  <!-- ══════════════════════════════════════ -->
+  <!--   SUBTLE CIRCUIT TRACES (tech layer)  -->
+  <!-- ══════════════════════════════════════ -->
+
+  <g fill="none">
+    <!-- Cyan trace network -->
+    <path d="M420,500 H340 V600 H250" stroke="rgba(34,211,238,0.05)" stroke-width="0.8"/>
+    <path d="M420,500 V380 H560" stroke="rgba(34,211,238,0.04)" stroke-width="0.8"/>
+    <circle cx="420" cy="500" r="3" fill="rgba(34,211,238,0.18)"/>
+    <circle cx="340" cy="600" r="2.5" fill="rgba(34,211,238,0.12)"/>
+    <!-- Amber trace network -->
+    <path d="M1340,640 H1260 V720 H1180" stroke="rgba(251,191,36,0.05)" stroke-width="0.8"/>
+    <path d="M1340,640 V560 H1200" stroke="rgba(251,191,36,0.04)" stroke-width="0.8"/>
+    <circle cx="1340" cy="640" r="3" fill="rgba(251,191,36,0.18)"/>
+    <circle cx="1260" cy="720" r="2.5" fill="rgba(251,191,36,0.12)"/>
+    <!-- Violet trace -->
+    <path d="M960,438 V360 H860" stroke="rgba(167,139,250,0.04)" stroke-width="0.8"/>
+    <path d="M960,570 V640 H1060" stroke="rgba(167,139,250,0.04)" stroke-width="0.8"/>
+    <circle cx="960" cy="438" r="2.5" fill="rgba(167,139,250,0.15)"/>
+  </g>
+
+
+  <!-- ══════════════════════════════════════ -->
+  <!--          FINAL OVERLAYS               -->
+  <!-- ══════════════════════════════════════ -->
+
+  <!-- Vignette -->
+  <rect width="1920" height="1080" fill="url(#vignette)"/>
+  <!-- Right-side extra darken (behind form area) -->
+  <rect width="1920" height="1080" fill="url(#rightFade)"/>
+  <!-- Left-side gentle darken -->
+  <rect width="1920" height="1080" fill="url(#leftFade)"/>
+  <!-- Top darken -->
+  <rect width="1920" height="180" fill="url(#vignette)" opacity="0.5"/>
+  <!-- Bottom darken -->
+  <rect y="900" width="1920" height="180" fill="#03030a" opacity="0.6"/>
+
+</svg>

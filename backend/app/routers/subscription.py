@@ -37,23 +37,25 @@ router = APIRouter(prefix="/api/subscription", tags=["subscription"])
 # ── Plan definitions ─────────────────────────────────────────────────────────
 
 PLANS = {
-    "basic": {
-        "name": "Basic",
-        "price": 49,
-        "price_label": "$49/mo",
-        "calls_per_month": 100,
+    "essential": {
+        "name": "Essential",
+        "price": 79.99,
+        "price_label": "$79.99/mo",
+        "calls_per_month": 150,
         "ai_model": "Claude Haiku",
         "features": [
-            "Up to 100 AI calls/month",
-            "Basic order taking",
-            "SMS notifications",
-            "1 knowledge base document",
+            "Up to 150 AI calls/month",
+            "Instant call answering 24/7",
+            "Full order taking & confirmation",
+            "SMS order notifications",
+            "5 knowledge base documents",
+            "Stripe payment links",
             "Email support",
         ],
         "limits": {
-            "calls_per_month": 100,
-            "documents": 1,
-            "menu_items": 25,
+            "calls_per_month": 150,
+            "documents": 5,
+            "menu_items": 50,
             "sms_enabled": True,
             "analytics": False,
             "priority_support": False,
@@ -61,22 +63,23 @@ PLANS = {
     },
     "pro": {
         "name": "Pro",
-        "price": 149,
-        "price_label": "$149/mo",
+        "price": 199,
+        "price_label": "$199/mo",
         "calls_per_month": 500,
         "ai_model": "Claude Haiku + Sonnet",
         "features": [
             "Up to 500 AI calls/month",
-            "Advanced order taking with allergy detection",
+            "Advanced allergy & dietary detection",
             "SMS + Stripe payment links",
-            "10 knowledge base documents",
-            "Analytics dashboard",
+            "20 knowledge base documents",
+            "Full analytics dashboard",
+            "Call recording & transcripts",
             "Priority email support",
         ],
         "limits": {
             "calls_per_month": 500,
-            "documents": 10,
-            "menu_items": 100,
+            "documents": 20,
+            "menu_items": 200,
             "sms_enabled": True,
             "analytics": True,
             "priority_support": True,
@@ -85,22 +88,22 @@ PLANS = {
     },
     "enterprise": {
         "name": "Enterprise",
-        "price": 399,
-        "price_label": "$399/mo",
-        "calls_per_month": -1,
+        "price": 499,
+        "price_label": "$499/mo",
+        "calls_per_month": 2000,
         "ai_model": "Claude Sonnet (all calls)",
         "features": [
-            "Unlimited AI calls",
+            "Up to 2,000 AI calls/month",
+            "Claude Sonnet on every call",
             "Full allergy & dietary handling",
-            "SMS + Stripe + custom integrations",
             "Unlimited knowledge base documents",
             "Advanced analytics & reports",
-            "Dedicated account manager",
-            "Custom AI training",
             "Multi-location support",
+            "Dedicated account manager",
+            "Custom AI personality & training",
         ],
         "limits": {
-            "calls_per_month": -1,
+            "calls_per_month": 2000,
             "documents": -1,
             "menu_items": -1,
             "sms_enabled": True,
@@ -194,7 +197,7 @@ def send_plan_change_otp(
 
 
 def _plan_rank(plan: str) -> int:
-    return {"basic": 0, "pro": 1, "enterprise": 2}.get(plan, 0)
+    return {"essential": 0, "pro": 1, "enterprise": 2}.get(plan, 0)
 
 
 # ── Usage alert check ────────────────────────────────────────────────────────
@@ -207,7 +210,7 @@ def check_usage_alert(db: Session, owner: Owner):
     if owner.id in _usage_alerts_sent:
         return  # Already alerted this cycle
 
-    plan_key = owner.plan or "basic"
+    plan_key = owner.plan or "essential"
     plan = PLANS.get(plan_key)
     if not plan:
         return
@@ -274,8 +277,8 @@ def get_current_subscription(
     db: Session = Depends(get_db),
 ):
     """Get current owner's subscription details including Stripe info."""
-    plan_key = current_owner.plan or "basic"
-    plan_details = PLANS.get(plan_key, PLANS["basic"])
+    plan_key = current_owner.plan or "essential"
+    plan_details = PLANS.get(plan_key, PLANS["essential"])
 
     # Calculate billing cycle
     created = current_owner.created_at or datetime.utcnow()
@@ -486,8 +489,8 @@ def cancel_current_subscription(
     db: Session = Depends(get_db),
 ):
     """Cancel the current subscription at the end of the billing period."""
-    if current_owner.plan == "basic":
-        raise HTTPException(status_code=400, detail="You are already on the free Basic plan")
+    if current_owner.plan == "essential":
+        raise HTTPException(status_code=400, detail="You are already on the Essential plan")
 
     # If Stripe subscription exists, cancel through Stripe
     if current_owner.stripe_subscription_id:
@@ -496,15 +499,15 @@ def cancel_current_subscription(
             raise HTTPException(status_code=500, detail="Failed to cancel subscription")
         return {"message": "Subscription will be cancelled at the end of the current billing period"}
 
-    # Dev mode: no Stripe, revert to basic directly
+    # Dev mode: no Stripe, revert to essential directly
     old_plan = current_owner.plan
-    current_owner.plan = "basic"
+    current_owner.plan = "essential"
     current_owner.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(current_owner)
     return {
-        "message": f"Subscription cancelled. Downgraded from {old_plan} to basic.",
-        "new_plan": "basic",
+        "message": f"Subscription cancelled. Downgraded from {old_plan} to essential.",
+        "new_plan": "essential",
     }
 
 
@@ -568,7 +571,7 @@ async def subscription_webhook(
             if plan and plan in PLANS:
                 owner.plan = plan
             if status in ("canceled", "unpaid"):
-                owner.plan = "basic"
+                owner.plan = "essential"
                 owner.stripe_subscription_id = None
             owner.updated_at = datetime.utcnow()
             db.commit()
@@ -583,11 +586,11 @@ async def subscription_webhook(
         ).first()
 
         if owner:
-            owner.plan = "basic"
+            owner.plan = "essential"
             owner.stripe_subscription_id = None
             owner.updated_at = datetime.utcnow()
             db.commit()
-            print(f"[Stripe Webhook] Subscription {subscription_id} deleted, owner reverted to basic")
+            print(f"[Stripe Webhook] Subscription {subscription_id} deleted, owner reverted to essential")
 
     # ── invoice.payment_failed ──
     elif event_type == "invoice.payment_failed":

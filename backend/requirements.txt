@@ -21,6 +21,7 @@ pydantic-settings>=2.5.0
 
 # AI
 anthropic>=0.40.0
+openai>=1.54.0
 
 # Voice
 telnyx>=2.0.0

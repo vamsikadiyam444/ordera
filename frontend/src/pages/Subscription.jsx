@@ -7,13 +7,13 @@ import { CheckIcon, SpinnerIcon } from '../components/Icons'
 
 /* ── Apple-inspired plan theming ── */
 const PLAN_THEMES = {
-  basic: {
-    accent: '#86868b',
-    accentLight: 'rgba(134,134,139,0.08)',
-    gradient: 'linear-gradient(145deg, #a1a1a6, #86868b)',
-    iconBg: 'linear-gradient(135deg, #e8e8ed, #d2d2d7)',
-    ring: 'rgba(134,134,139,0.2)',
-    label: 'Starter',
+  essential: {
+    accent: '#6366f1',
+    accentLight: 'rgba(99,102,241,0.08)',
+    gradient: 'linear-gradient(145deg, #818cf8, #6366f1)',
+    iconBg: 'linear-gradient(135deg, #e0e7ff, #c7d2fe)',
+    ring: 'rgba(99,102,241,0.2)',
+    label: 'Get Started',
   },
   pro: {
     accent: '#0071e3',
@@ -34,7 +34,7 @@ const PLAN_THEMES = {
 }
 
 const PLAN_ICONS = {
-  basic: (
+  essential: (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.56 5.56l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
     </svg>
@@ -52,138 +52,163 @@ const PLAN_ICONS = {
   ),
 }
 
-/* ── Usage Card with large ring + stats ── */
+/* ── Premium Usage Card ── */
 function UsageCard({ used, limit, label, subtitle, color = '#0071e3', icon }) {
   const unlimited = limit === -1
   const pct = unlimited ? 0 : limit === 0 ? 0 : Math.min((used / limit) * 100, 100)
-  const r = 52
-  const circ = 2 * Math.PI * r
-  const offset = circ - (pct / 100) * circ
   const remaining = unlimited ? null : Math.max(limit - used, 0)
 
-  // Status color based on usage
   const statusColor = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : color
-  const statusLabel = unlimited ? 'Unlimited' : pct >= 90 ? 'Almost full' : pct >= 70 ? 'Getting high' : 'On track'
-  const statusBg = pct >= 90 ? 'rgba(239,68,68,0.08)' : pct >= 70 ? 'rgba(245,158,11,0.08)' : `${color}10`
+  const statusLabel = unlimited ? 'Unlimited' : pct >= 90 ? 'Critical' : pct >= 70 ? 'High usage' : 'Healthy'
+  const statusDot = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#34c759'
+
+  // Ring math — thinner, larger
+  const size = 120
+  const stroke = 7
+  const r = (size - stroke) / 2
+  const circ = 2 * Math.PI * r
+  const offset = circ - (pct / 100) * circ
 
   return (
-    <div
-      style={{
-        background: 'var(--card-bg)',
-        border: '1px solid var(--border)',
-        borderRadius: 16,
-        padding: '24px 24px 20px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 16,
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Subtle top accent bar */}
+    <div style={{
+      position: 'relative',
+      background: 'var(--card-bg)',
+      border: '1px solid var(--border)',
+      borderRadius: 20,
+      padding: '22px 24px',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 20,
+    }}>
+      {/* Ambient glow */}
       <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-        background: `linear-gradient(90deg, ${color}, ${color}88)`,
-        borderRadius: '16px 16px 0 0',
+        position: 'absolute', top: -40, right: -40,
+        width: 160, height: 160, borderRadius: '50%',
+        background: `radial-gradient(circle, ${color}18 0%, transparent 70%)`,
+        pointerEvents: 'none',
       }} />
 
-      {/* Label + icon row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 8,
-          background: `${color}12`, color: color,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          {icon}
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.01em' }}>{label}</div>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1 }}>{subtitle}</div>
-        </div>
-        {/* Status pill */}
-        <span style={{
-          fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6,
-          background: statusBg, color: statusColor,
-        }}>
-          {statusLabel}
-        </span>
-      </div>
-
-      {/* Large ring */}
-      <div style={{ position: 'relative', width: 130, height: 130 }}>
-        <svg width="130" height="130" viewBox="0 0 130 130" style={{ transform: 'rotate(-90deg)' }}>
-          {/* Track */}
-          <circle cx="65" cy="65" r={r} fill="none" stroke="var(--border)" strokeWidth="10" opacity="0.5" />
-          {/* Progress */}
-          <circle
-            cx="65" cy="65" r={r} fill="none"
-            stroke={unlimited ? `${color}30` : statusColor}
-            strokeWidth="10"
-            strokeLinecap="round"
-            strokeDasharray={circ}
-            strokeDashoffset={unlimited ? circ * 0.92 : offset}
-            style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
-          />
-        </svg>
-        <div style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-        }}>
-          {unlimited ? (
-            <>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
-                <path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z" />
-              </svg>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-3)', marginTop: 4 }}>Unlimited</span>
-            </>
-          ) : (
-            <>
-              <span style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1, letterSpacing: '-0.03em' }}>
-                {Math.round(pct)}
-              </span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-3)', marginTop: 2 }}>percent</span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div style={{
-        display: 'flex', width: '100%', gap: 1, borderRadius: 10, overflow: 'hidden',
-        background: 'var(--border)',
-      }}>
-        <div style={{
-          flex: 1, textAlign: 'center', padding: '10px 8px',
-          background: 'var(--card-bg)',
-        }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-1)', letterSpacing: '-0.02em' }}>
-            {used.toLocaleString()}
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2, fontWeight: 500 }}>Used</div>
-        </div>
-        <div style={{
-          flex: 1, textAlign: 'center', padding: '10px 8px',
-          background: 'var(--card-bg)',
-        }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-1)', letterSpacing: '-0.02em' }}>
-            {unlimited ? '\u221E' : limit.toLocaleString()}
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2, fontWeight: 500 }}>Limit</div>
-        </div>
-        {!unlimited && (
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
-            flex: 1, textAlign: 'center', padding: '10px 8px',
-            background: 'var(--card-bg)',
+            width: 38, height: 38, borderRadius: 11, flexShrink: 0,
+            background: `linear-gradient(135deg, ${color}22, ${color}10)`,
+            border: `1px solid ${color}25`,
+            color: color,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: statusColor, letterSpacing: '-0.02em' }}>
-              {remaining.toLocaleString()}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2, fontWeight: 500 }}>Left</div>
+            {icon}
           </div>
-        )}
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.02em' }}>
+              {label}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{subtitle}</div>
+          </div>
+        </div>
+        {/* Status badge */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 5,
+          background: `${statusColor}12`,
+          border: `1px solid ${statusColor}25`,
+          borderRadius: 999, padding: '4px 10px',
+        }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: statusDot, boxShadow: `0 0 6px ${statusDot}` }} />
+          <span style={{ fontSize: 11, fontWeight: 600, color: statusColor }}>{statusLabel}</span>
+        </div>
+      </div>
+
+      {/* Main content: ring + hero stat */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+
+        {/* Ring */}
+        <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+          <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+            <defs>
+              <linearGradient id={`grad-${label.replace(/\s/g,'')}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor={color} />
+                <stop offset="100%" stopColor={statusColor} />
+              </linearGradient>
+            </defs>
+            {/* Track */}
+            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--border)" strokeWidth={stroke} />
+            {/* Progress */}
+            <circle
+              cx={size/2} cy={size/2} r={r} fill="none"
+              stroke={unlimited ? `${color}40` : `url(#grad-${label.replace(/\s/g,'')})`}
+              strokeWidth={stroke}
+              strokeLinecap="round"
+              strokeDasharray={circ}
+              strokeDashoffset={unlimited ? circ * 0.15 : offset}
+              style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(0.34, 1.56, 0.64, 1)', filter: `drop-shadow(0 0 4px ${color}88)` }}
+            />
+          </svg>
+          {/* Center */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {unlimited ? (
+              <span style={{ fontSize: 22, fontWeight: 800, color: color }}>∞</span>
+            ) : (
+              <>
+                <span style={{ fontSize: 26, fontWeight: 900, color: 'var(--text-1)', lineHeight: 1, letterSpacing: '-0.04em' }}>
+                  {Math.round(pct)}<span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-3)' }}>%</span>
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Stat stack */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Remaining — hero */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-3)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              {unlimited ? 'Available' : 'Remaining'}
+            </div>
+            <div style={{ fontSize: 34, fontWeight: 900, color: statusColor, letterSpacing: '-0.04em', lineHeight: 1 }}>
+              {unlimited ? '∞' : remaining.toLocaleString()}
+            </div>
+          </div>
+
+          {/* Used / Limit row */}
+          <div style={{ display: 'flex', gap: 16 }}>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 500 }}>Used</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-2)', letterSpacing: '-0.02em' }}>
+                {used.toLocaleString()}
+              </div>
+            </div>
+            <div style={{ width: 1, background: 'var(--border)' }} />
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 500 }}>Limit</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-2)', letterSpacing: '-0.02em' }}>
+                {unlimited ? '∞' : limit.toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div>
+        <div style={{ height: 5, borderRadius: 999, background: 'var(--border)', overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            width: unlimited ? '8%' : `${pct}%`,
+            borderRadius: 999,
+            background: `linear-gradient(90deg, ${color}, ${statusColor})`,
+            boxShadow: `0 0 8px ${color}66`,
+            transition: 'width 1.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+          <span style={{ fontSize: 10, color: 'var(--text-3)' }}>0</span>
+          <span style={{ fontSize: 10, color: 'var(--text-3)' }}>{unlimited ? 'Unlimited' : limit.toLocaleString()}</span>
+        </div>
       </div>
     </div>
   )
@@ -191,7 +216,7 @@ function UsageCard({ used, limit, label, subtitle, color = '#0071e3', icon }) {
 
 /* ── Premium plan card (Apple product card style) ── */
 function PlanCard({ planKey, plan, isCurrent, onSelect, changing, index }) {
-  const theme = PLAN_THEMES[planKey]
+  const theme = PLAN_THEMES[planKey] || PLAN_THEMES.essential
   const isPopular = plan.popular
   const [hovered, setHovered] = useState(false)
 
@@ -728,10 +753,10 @@ export default function Subscription() {
     )
   }
 
-  const currentPlan = subscription?.current_plan || 'basic'
+  const currentPlan = subscription?.current_plan || 'essential'
   const billing = subscription?.billing || {}
   const usage = subscription?.usage || {}
-  const currentTheme = PLAN_THEMES[currentPlan] || PLAN_THEMES.basic
+  const currentTheme = PLAN_THEMES[currentPlan] || PLAN_THEMES.essential
 
   return (
     <Layout>

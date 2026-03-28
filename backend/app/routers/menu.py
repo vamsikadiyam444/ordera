@@ -60,6 +60,15 @@ def update_item(
     return item
 
 
+@router.delete("/all")
+def delete_all_items(db: Session = Depends(get_db), current_owner: Owner = Depends(get_current_owner)):
+    """Delete all menu items for this restaurant."""
+    restaurant = _get_restaurant(db, current_owner)
+    deleted = db.query(MenuItem).filter(MenuItem.restaurant_id == restaurant.id).delete()
+    db.commit()
+    return {"message": f"Deleted {deleted} menu items"}
+
+
 @router.delete("/{item_id}")
 def delete_item(
     item_id: str,
@@ -76,34 +85,3 @@ def delete_item(
     db.delete(item)
     db.commit()
     return {"message": "Item deleted"}
-
-
-@router.post("/seed", status_code=201)
-def seed_menu(db: Session = Depends(get_db), current_owner: Owner = Depends(get_current_owner)):
-    """Seed a demo menu for development."""
-    restaurant = _get_restaurant(db, current_owner)
-
-    sample_items = [
-        {"category": "Appetizers", "name": "Mozzarella Sticks", "price": 8.99, "description": "Golden fried with marinara sauce"},
-        {"category": "Appetizers", "name": "Chicken Wings", "price": 12.99, "description": "Buffalo or BBQ, 10 pieces"},
-        {"category": "Mains", "name": "Classic Burger", "price": 13.99, "description": "8oz beef patty, lettuce, tomato, onion"},
-        {"category": "Mains", "name": "Grilled Chicken Sandwich", "price": 12.99, "description": "Herb-marinated chicken breast"},
-        {"category": "Mains", "name": "Margherita Pizza", "price": 14.99, "description": "Tomato, mozzarella, fresh basil"},
-        {"category": "Mains", "name": "Caesar Salad", "price": 10.99, "description": "Romaine, parmesan, croutons"},
-        {"category": "Sides", "name": "French Fries", "price": 3.99, "description": "Crispy golden fries"},
-        {"category": "Sides", "name": "Onion Rings", "price": 4.99, "description": "Beer-battered"},
-        {"category": "Drinks", "name": "Soft Drink", "price": 2.99, "description": "Coke, Diet Coke, Sprite, Ginger Ale"},
-        {"category": "Drinks", "name": "Fresh Lemonade", "price": 3.99, "description": "Freshly squeezed"},
-        {"category": "Desserts", "name": "Chocolate Brownie", "price": 5.99, "description": "Warm with vanilla ice cream"},
-    ]
-
-    for item_data in sample_items:
-        existing = db.query(MenuItem).filter(
-            MenuItem.restaurant_id == restaurant.id,
-            MenuItem.name == item_data["name"]
-        ).first()
-        if not existing:
-            db.add(MenuItem(restaurant_id=restaurant.id, **item_data))
-
-    db.commit()
-    return {"message": f"Seeded {len(sample_items)} menu items"}

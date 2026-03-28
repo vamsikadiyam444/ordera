@@ -5,18 +5,20 @@ Sends order confirmations and payment links to customers.
 import telnyx
 from app.config import settings
 
-telnyx.api_key = settings.TELNYX_API_KEY
+_client = telnyx.Telnyx(api_key=settings.TELNYX_API_KEY)
 
 
 def send_sms(to_phone: str, from_phone: str, message: str) -> bool:
     """Send an SMS message. Returns True on success."""
     try:
-        telnyx.Message.create(
-            from_=from_phone,
-            to=to_phone,
-            text=message,
-            messaging_profile_id=settings.TELNYX_MESSAGING_PROFILE_ID,
-        )
+        params = {
+            "from_": from_phone,
+            "to": to_phone,
+            "text": message,
+        }
+        if settings.TELNYX_MESSAGING_PROFILE_ID:
+            params["messaging_profile_id"] = settings.TELNYX_MESSAGING_PROFILE_ID
+        _client.messages.create(**params)
         return True
     except Exception as e:
         print(f"[SMS] Error sending to {to_phone}: {e}")
