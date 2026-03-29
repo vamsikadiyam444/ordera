@@ -35,6 +35,17 @@ def upload_document(
     if ext not in ALLOWED_TYPES:
         raise HTTPException(status_code=400, detail=f"Unsupported file type. Allowed: {ALLOWED_TYPES}")
 
+    # Check for duplicate filename for this owner
+    existing = db.query(Document).filter(
+        Document.owner_id == current_owner.id,
+        Document.filename == filename,
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail=f"A document named '{filename}' already exists. Delete it first if you want to replace it.",
+        )
+
     # Read file (sync read via SpooledTemporaryFile)
     content = file.file.read()
     if len(content) > MAX_FILE_SIZE:

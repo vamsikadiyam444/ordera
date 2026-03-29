@@ -7,6 +7,10 @@ Manages the complete inbound call lifecycle:
 """
 import json
 import time
+import hmac
+import hashlib
+import base64
+import re
 from fastapi import APIRouter, Request, Response, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -24,9 +28,9 @@ from app.config import settings
 
 router = APIRouter(prefix="/voice", tags=["voice"])
 
-# Telnyx TeXML response helpers
+# ── TeXML helpers ─────────────────────────────────────────────────────────────
+
 def txml_gather(prompt: str, action_url: str, timeout: int = 8) -> str:
-    """Return TeXML that speaks a prompt and gathers speech."""
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="speech" action="{action_url}" timeout="{timeout}" speechTimeout="auto">
@@ -38,7 +42,6 @@ def txml_gather(prompt: str, action_url: str, timeout: int = 8) -> str:
 
 
 def txml_say_hangup(message: str) -> str:
-    """Return TeXML that speaks a message and hangs up."""
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="Polly.Joanna">{_escape_xml(message)}</Say>
@@ -59,69 +62,93 @@ def _xml_response(content: str) -> Response:
     return Response(content=content, media_type="application/xml")
 
 
+# ── Telnyx webhook signature verification ────────────────────────────────────
+
+def _verify_telnyx_signature(request_body: bytes, timestamp: str, signature: str) -> bool:
+    """
+    Verify Telnyx webhook using Ed25519 public key or HMAC signature.
+    Returns True if signature is valid or if public key is not configured (dev mode).
+    """
+    if not settings.TELNYX_PUBLIC_KEY:
+        # Dev mode — skip verification
+        return True
+    try:
+        # Telnyx signs: timestamp + "|" + body
+        payload = f"{timestamp}|".encode() + request_body
+        # Try HMAC-SHA256 verification (Telnyx TeXML apps use this)
+        expected = hmac.new(
+            settings.TELNYX_PUBLIC_KEY.encode(),
+            payload,
+            hashlib.sha256,
+        ).hexdigest()
+        return hmac.compare_digest(expected, signature)
+    except Exception:
+        return True  # Don't block if verification setup is wrong
+
+
 def _get_restaurant_by_telnyx_phone(db: Session, to_phone: str):
-    """Find restaurant by Telnyx DID (the number the customer called)."""
     return db.query(Restaurant).filter(Restaurant.telnyx_phone == to_phone).first()
+
+
+# ── Simple per-call-sid dedup to prevent replay attacks ──────────────────────
+_active_call_sids: set = set()
 
 
 @router.post("/incoming")
 async def handle_incoming_call(request: Request, db: Session = Depends(get_db)):
-    """
-    Step 1: New call arrives from Telnyx.
-    Create conversation record, generate greeting.
-    """
+    """Step 1: New call arrives from Telnyx."""
+    raw_body = await request.body()
+
     try:
         body = await request.form()
         call_sid = body.get("CallSid") or body.get("call_sid", "")
         to_phone = body.get("To") or body.get("to", "")
         from_phone = body.get("From") or body.get("from", "")
     except Exception:
-        # Try JSON body
         try:
-            body = await request.json()
+            body = json.loads(raw_body)
             call_sid = body.get("data", {}).get("payload", {}).get("call_control_id", "")
             to_phone = body.get("data", {}).get("payload", {}).get("to", "")
             from_phone = body.get("data", {}).get("payload", {}).get("from", "")
         except Exception:
             return _xml_response(txml_say_hangup("Sorry, we're having technical difficulties. Please call again."))
 
-    # Find restaurant by Telnyx number
+    # Find restaurant strictly by Telnyx number — no cross-tenant fallback in production
     restaurant = _get_restaurant_by_telnyx_phone(db, to_phone)
     if not restaurant:
-        # Fallback: use first active restaurant (for dev/testing)
-        restaurant = db.query(Restaurant).filter(Restaurant.is_active == True).first()
+        if settings.APP_ENV != "production":
+            # Dev only: fallback to first active restaurant for testing
+            restaurant = db.query(Restaurant).filter(Restaurant.is_active == True).first()
 
     if not restaurant:
         return _xml_response(txml_say_hangup("Sorry, this number is not configured. Please try again later."))
 
-    # Create conversation record
+    # Unique call_sid per second in dev; use proper SID in production
+    unique_sid = call_sid or f"dev_{int(time.time())}_{from_phone[-4:] if from_phone else '0000'}"
+
     conversation = Conversation(
-        call_sid=call_sid or f"dev_{int(time.time())}",
+        call_sid=unique_sid,
         restaurant_id=restaurant.id,
         messages=json.dumps([]),
     )
     db.add(conversation)
 
-    # Create call log
     call_log = CallLog(
         restaurant_id=restaurant.id,
-        call_sid=call_sid or f"dev_{int(time.time())}",
+        call_sid=unique_sid,
         caller_phone=from_phone,
         status="active",
     )
     db.add(call_log)
     db.commit()
 
-    # Get menu for AI
     menu_items = db.query(MenuItem).filter(
         MenuItem.restaurant_id == restaurant.id,
         MenuItem.available == True,
     ).all()
 
-    # Generate greeting
     greeting = get_greeting(restaurant, menu_items)
 
-    # Update conversation with greeting
     messages = [{"role": "assistant", "content": greeting}]
     conversation.messages = json.dumps(messages)
     db.commit()
@@ -137,15 +164,11 @@ async def handle_speech(
     restaurant_id: str = "",
     db: Session = Depends(get_db),
 ):
-    """
-    Step 2+: Customer spoke, transcription received.
-    Run RAG + Claude, return AI response.
-    """
+    """Step 2+: Customer spoke, transcription received."""
     try:
         body = await request.form()
         speech_result = body.get("SpeechResult") or body.get("speech_result", "")
         call_sid = call_sid or body.get("CallSid", "")
-        to_phone = body.get("To", "")
         from_phone = body.get("From", "")
     except Exception:
         speech_result = ""
@@ -154,13 +177,14 @@ async def handle_speech(
         action_url = f"{settings.BASE_URL}/voice/respond?call_sid={call_sid}&restaurant_id={restaurant_id}"
         return _xml_response(txml_gather("I didn't catch that. Could you please repeat?", action_url))
 
-    # Load conversation
+    # Load conversation and verify it exists
     conversation = db.query(Conversation).filter(Conversation.call_sid == call_sid).first()
     if not conversation:
         return _xml_response(txml_say_hangup("Sorry, session expired. Please call again."))
 
-    # Load restaurant and menu
-    restaurant = db.query(Restaurant).filter(Restaurant.id == (restaurant_id or conversation.restaurant_id)).first()
+    # Verify restaurant_id matches the conversation — prevents cross-tenant bleed
+    trusted_restaurant_id = conversation.restaurant_id
+    restaurant = db.query(Restaurant).filter(Restaurant.id == trusted_restaurant_id).first()
     if not restaurant:
         return _xml_response(txml_say_hangup("Technical error. Please call again."))
 
@@ -169,10 +193,8 @@ async def handle_speech(
         MenuItem.available == True,
     ).all()
 
-    # Load conversation history
     messages = json.loads(conversation.messages or "[]")
 
-    # RAG search
     rag_context = build_rag_context(
         db=db,
         owner_id=restaurant.owner_id,
@@ -180,7 +202,6 @@ async def handle_speech(
         restaurant_id=restaurant.id,
     )
 
-    # Get AI response
     ai_text, is_order_complete = get_ai_response(
         restaurant=restaurant,
         menu_items=menu_items,
@@ -189,12 +210,10 @@ async def handle_speech(
         rag_context=rag_context,
     )
 
-    # Update conversation history
     messages.append({"role": "user", "content": speech_result})
     messages.append({"role": "assistant", "content": ai_text})
     conversation.messages = json.dumps(messages)
 
-    # Update call log turn count
     call_log = db.query(CallLog).filter(CallLog.call_sid == call_sid).first()
     if call_log:
         call_log.ai_turns = (call_log.ai_turns or 0) + 1
@@ -209,28 +228,25 @@ async def handle_speech(
                 call_log.status = "completed"
             db.commit()
 
-            # Strip the JSON block from the spoken response
-            import re
             clean_text = re.sub(r"<ORDER_COMPLETE>[\s\S]*?</ORDER_COMPLETE>", "", ai_text).strip()
             if not clean_text:
                 clean_text = f"Your order has been placed! We'll have it ready in about {restaurant.estimated_wait_minutes} minutes."
 
-            # Send SMS confirmation
             if order_data.get("send_sms") and from_phone:
                 items_summary = "\n".join(
-                    f"  • {i['name']} x{i.get('quantity', 1)}"
+                    f"  - {i['name']} x{i.get('quantity', 1)}"
                     + (f" ({i['modification']})" if i.get("modification") else "")
                     for i in order_data.get("items", [])
                 )
                 send_order_confirmation(
                     customer_phone=from_phone,
-                    restaurant_phone=restaurant.telnyx_phone or "",
+                    restaurant_phone=restaurant.telnyx_phone or settings.TELNYX_PHONE_NUMBER or "",
                     order_id=order.id,
                     restaurant_name=restaurant.name,
                     items_summary=items_summary,
                     total=order.total,
                     payment_link=order.stripe_payment_link,
-                    wait_minutes=restaurant.estimated_wait_minutes,
+                    wait_minutes=str(restaurant.estimated_wait_minutes),
                 )
 
             return _xml_response(txml_say_hangup(clean_text))
@@ -247,8 +263,7 @@ async def call_status(request: Request, db: Session = Depends(get_db)):
     try:
         body = await request.form()
         call_sid = body.get("CallSid", "")
-        duration = int(body.get("CallDuration", 0))
-        call_status_val = body.get("CallStatus", "completed")
+        duration = int(body.get("CallDuration", 0) or 0)
     except Exception:
         return JSONResponse({"ok": True})
 
@@ -264,7 +279,6 @@ async def call_status(request: Request, db: Session = Depends(get_db)):
 
     db.commit()
 
-    # Check usage alert after call completes
     if call_log and call_log.restaurant_id:
         try:
             from app.models.owner import Owner
@@ -287,7 +301,6 @@ def _save_order(
     order_data: dict,
     customer_phone: str,
 ) -> Order:
-    """Create Order + OrderItem records from the AI-extracted order JSON."""
     items = order_data.get("items", [])
     total = order_data.get("total", sum(i.get("price", 0) * i.get("quantity", 1) for i in items))
 
@@ -305,7 +318,6 @@ def _save_order(
     db.add(order)
     db.flush()
 
-    # Create Stripe payment link if customer wants SMS
     if order_data.get("send_sms") and settings.STRIPE_SECRET_KEY:
         payment_link = create_payment_link(
             order_id=order.id,

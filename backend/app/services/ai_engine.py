@@ -17,7 +17,7 @@ from app.models.menu_item import MenuItem
 logger = logging.getLogger(__name__)
 
 # Claude model IDs
-HAIKU_MODEL = "claude-haiku-4-5-20251001"
+HAIKU_MODEL = "claude-haiku-4-5-20251001"   # valid: claude-haiku-4-5-20251001
 SONNET_MODEL = "claude-sonnet-4-6"
 
 # Groq model IDs
@@ -43,10 +43,12 @@ if settings.GROQ_API_KEY:
         base_url="https://api.groq.com/openai/v1",
     )
     logger.info("AI provider: Groq (llama-3.1-8b-instant / llama-3.3-70b-versatile)")
-else:
+elif settings.ANTHROPIC_API_KEY:
     import anthropic
     _anthropic_client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
     logger.info("AI provider: Anthropic Claude")
+else:
+    logger.warning("No AI provider configured — set GROQ_API_KEY or ANTHROPIC_API_KEY")
 
 
 # ---------------------------------------------------------------------------
@@ -84,6 +86,9 @@ def _chat(
         )
         return resp.choices[0].message.content
 
+    if not _anthropic_client:
+        raise RuntimeError("No AI provider configured. Set GROQ_API_KEY or ANTHROPIC_API_KEY.")
+
     # Anthropic path
     model = HAIKU_MODEL if fast else SONNET_MODEL
     system_param = []
@@ -107,29 +112,72 @@ def _chat(
 # ---------------------------------------------------------------------------
 def extract_menu_items(text: str) -> list[dict]:
     """Parse a menu document and return structured menu items as a list of dicts."""
-    prompt = (
-        "Extract all menu items from the restaurant menu text below.\n"
-        "Return ONLY a valid JSON array — no markdown, no explanation.\n"
-        "Each element must have exactly these keys:\n"
-        '  "category": string (e.g. "Appetizers", "Mains", "Sides", "Desserts", "Drinks")\n'
-        '  "name": string\n'
-        '  "description": string or null\n'
-        '  "price": number (e.g. 12.99; use 0 if not found)\n\n'
-        f"Menu text:\n{text[:8000]}"
-    )
+    # Process in chunks of 3000 chars to stay within Groq token limits
+    CHUNK_SIZE = 3000
+    text_chunks = [text[i:i+CHUNK_SIZE] for i in range(0, min(len(text), 12000), CHUNK_SIZE)]
 
-    raw = _chat(fast=True, system="", messages=[{"role": "user", "content": prompt}], max_tokens=4096)
-    logger.info("Menu extraction raw response (first 500 chars): %s", raw[:500])
+    all_items = []
+    for chunk in text_chunks:
+        prompt = (
+            "Extract all menu items from the restaurant menu text below.\n"
+            "Return ONLY a valid JSON array — no markdown, no explanation.\n"
+            "Each element must have exactly these keys:\n"
+            '  "category": string (e.g. "Appetizers", "Mains", "Sides", "Desserts", "Drinks")\n'
+            '  "name": string\n'
+            '  "description": string or null\n'
+            '  "price": number (e.g. 12.99; use 0 if not found)\n\n'
+            f"Menu text:\n{chunk}"
+        )
 
-    # Strip markdown code fences if present
-    if raw.startswith("```"):
-        parts = raw.split("```")
-        raw = parts[1] if len(parts) > 1 else parts[0]
-        if raw.startswith("json"):
-            raw = raw[4:].strip()
+        try:
+            raw = _chat(fast=False, system="", messages=[{"role": "user", "content": prompt}], max_tokens=2000)
+            logger.info("Menu extraction raw response (first 300 chars): %s", raw[:300])
 
-    items = json.loads(raw)
-    return items if isinstance(items, list) else []
+            # Strip markdown code fences if present
+            raw = raw.strip()
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+                raw = raw.strip()
+
+            # Try full parse first
+            try:
+                items = json.loads(raw)
+            except json.JSONDecodeError:
+                # Response was truncated — salvage complete objects from the partial array
+                items = _parse_partial_json_array(raw)
+
+            if isinstance(items, list):
+                all_items.extend(items)
+        except Exception as e:
+            logger.error("Menu extraction chunk failed: %s", e)
+
+    # Deduplicate by name
+    seen = set()
+    unique = []
+    for item in all_items:
+        name = item.get("name", "").strip().lower()
+        if name and name not in seen:
+            seen.add(name)
+            unique.append(item)
+
+    return unique
+
+
+def _parse_partial_json_array(raw: str) -> list:
+    """Salvage complete JSON objects from a truncated array string."""
+    import re
+    objects = []
+    # Find all complete {...} blocks
+    for match in re.finditer(r'\{[^{}]+\}', raw):
+        try:
+            obj = json.loads(match.group())
+            if "name" in obj:
+                objects.append(obj)
+        except json.JSONDecodeError:
+            continue
+    return objects
 
 
 # ---------------------------------------------------------------------------
