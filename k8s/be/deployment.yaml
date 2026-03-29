@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: 405087531929.dkr.ecr.us-east-1.amazonaws.com/ordera-app:backend-640fb68c7e0a4ea4f6017fe2f44f8a0faf59a8bb
+          image: 405087531929.dkr.ecr.us-east-1.amazonaws.com/ordera-app:backend-a98a7e7a5be2e8d5fb4542a10359015d5c6d4bbf
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
