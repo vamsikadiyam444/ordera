@@ -172,6 +172,10 @@ export default function Login() {
     setLoading(true)
     try {
       const res = await loginRequest(email, password)
+      if (res.access_token) {
+        navigate('/dashboard')
+        return
+      }
       setDevOtp(res.otp || '')
       setMode('otp')
     } catch (err) {

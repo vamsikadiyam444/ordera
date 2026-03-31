@@ -70,13 +70,19 @@ def signup(data: OwnerCreate, db: Session = Depends(get_db)):
 
 @router.post("/login/request")
 def login_request(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
-    """Step 1: Validate credentials, send OTP to email."""
+    """Step 1: Validate credentials, send OTP to email.
+    Falls back to direct JWT issuance when SMTP is not configured."""
     ip = request.client.host if request.client else "unknown"
     _check_rate_limit(ip)
 
     owner = authenticate_owner(db, data.email, data.password)
     if not owner:
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # No SMTP configured — skip OTP step and issue token directly
+    if not settings.SMTP_HOST:
+        token = create_access_token({"sub": owner.id})
+        return Token(access_token=token, owner=OwnerResponse.model_validate(owner))
 
     identifier = f"login:{data.email}"
     code = generate_otp(db, identifier)
@@ -85,7 +91,7 @@ def login_request(data: LoginRequest, request: Request, db: Session = Depends(ge
     send_otp_email(data.email, code, purpose="login")
 
     response: dict = {"message": f"Verification code sent to {data.email}"}
-    if settings.APP_ENV != "production" and not settings.SMTP_HOST:
+    if settings.APP_ENV != "production":
         response["otp"] = code
         response["dev_mode"] = True
     return response

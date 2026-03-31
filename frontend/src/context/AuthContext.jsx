@@ -12,7 +12,13 @@ export function AuthProvider({ children }) {
 
   const loginRequest = async (email, password) => {
     const res = await authApi.loginRequest({ email, password })
-    return res.data // { message, otp?, dev_mode? }
+    // If SMTP not configured, backend issues token directly (no OTP step)
+    if (res.data.access_token) {
+      localStorage.setItem('token', res.data.access_token)
+      localStorage.setItem('owner', JSON.stringify(res.data.owner))
+      setOwner(res.data.owner)
+    }
+    return res.data // { message, otp?, dev_mode? } OR { access_token, owner }
   }
 
   const login = async (email, otp_code) => {
