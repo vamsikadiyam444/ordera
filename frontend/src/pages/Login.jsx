@@ -155,13 +155,15 @@ const inputStyle = {
 }
 
 export default function Login() {
-  const [mode, setMode] = useState('login')
+  const [mode, setMode] = useState('login') // 'login' | 'otp' | 'forgot'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [otpCode, setOtpCode] = useState('')
+  const [devOtp, setDevOtp] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [forgotSent, setForgotSent] = useState(false)
-  const { login } = useAuth()
+  const { loginRequest, login } = useAuth()
   const navigate = useNavigate()
 
   const handleLogin = async (e) => {
@@ -169,10 +171,25 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
-      await login(email, password)
-      navigate('/dashboard')
+      const res = await loginRequest(email, password)
+      setDevOtp(res.otp || '')
+      setMode('otp')
     } catch (err) {
       setError(err.response?.data?.detail || 'Invalid email or password.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      await login(email, otpCode)
+      navigate('/dashboard')
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Invalid or expired verification code.')
     } finally {
       setLoading(false)
     }
@@ -292,7 +309,91 @@ export default function Login() {
 
         <div style={{ width: '100%', maxWidth: 400 }}>
 
-          {mode === 'login' ? (
+          {mode === 'otp' ? (
+            <>
+              <button
+                onClick={() => { setMode('login'); setOtpCode(''); setDevOtp(''); setError('') }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500,
+                  color: 'rgba(255,255,255,0.38)', background: 'none', border: 'none', cursor: 'pointer',
+                  padding: 0, marginBottom: 20,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
+                Back
+              </button>
+
+              <div style={{ marginBottom: 28 }}>
+                <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff', letterSpacing: '-0.04em', marginBottom: 6 }}>
+                  Check your email
+                </h1>
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.36)' }}>
+                  We sent a 6-digit code to <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>{email}</span>
+                </p>
+              </div>
+
+              <div style={{ ...glass, padding: 28 }}>
+                <form onSubmit={handleVerifyOtp}>
+                  <div style={{ marginBottom: 20 }}>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.48)', marginBottom: 7, letterSpacing: '0.01em' }}>
+                      Verification code
+                    </label>
+                    <input
+                      type="text"
+                      value={otpCode}
+                      onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      required
+                      autoFocus
+                      placeholder="000000"
+                      maxLength={6}
+                      style={{ ...inputStyle, fontSize: 22, fontWeight: 700, letterSpacing: '0.3em', textAlign: 'center' }}
+                    />
+                    {devOtp && (
+                      <div style={{ marginTop: 8, fontSize: 12, color: '#fbbf24', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 8, padding: '6px 10px' }}>
+                        Dev mode — OTP: <strong>{devOtp}</strong>
+                      </div>
+                    )}
+                  </div>
+
+                  {error && (
+                    <div style={{
+                      background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.22)',
+                      borderRadius: 12, padding: '10px 14px', fontSize: 13, color: '#fca5a5', marginBottom: 16,
+                    }}>
+                      {error}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading || otpCode.length < 6}
+                    style={{
+                      width: '100%', height: 48, borderRadius: 13, border: 'none',
+                      cursor: (loading || otpCode.length < 6) ? 'not-allowed' : 'pointer',
+                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                      boxShadow: '0 4px 20px rgba(99,102,241,0.45), inset 0 1px 0 rgba(255,255,255,0.18)',
+                      color: '#fff', fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      transition: 'opacity 0.2s', opacity: (loading || otpCode.length < 6) ? 0.6 : 1,
+                    }}
+                  >
+                    {loading ? <><SpinnerIcon size={16} /> Verifying...</> : 'Verify & Sign In'}
+                  </button>
+                </form>
+
+                <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.32)', marginTop: 20, marginBottom: 0 }}>
+                  Didn't receive it?{' '}
+                  <button
+                    onClick={() => { setMode('login'); setOtpCode(''); setDevOtp(''); setError('') }}
+                    style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 13 }}
+                  >
+                    Try again
+                  </button>
+                </p>
+              </div>
+            </>
+
+          ) : mode === 'login' ? (
             <>
               <div style={{ marginBottom: 28 }}>
                 <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff', letterSpacing: '-0.04em', marginBottom: 6 }}>

@@ -69,3 +69,13 @@ class UpdateEmailWithOTP(BaseModel):
 class UpdatePhoneWithOTP(BaseModel):
     phone: str
     code: str
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class LoginVerify(BaseModel):
+    email: EmailStr
+    otp_code: str

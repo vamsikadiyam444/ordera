@@ -7,6 +7,7 @@ from app.schemas.auth import (
     OwnerCreate, OwnerLogin, OwnerResponse, Token,
     UpdateEmail, UpdatePhone, UpdatePassword,
     SendOTP, UpdateEmailWithOTP, UpdatePhoneWithOTP,
+    LoginRequest, LoginVerify,
 )
 from app.services.otp_service import generate_otp, verify_otp
 from app.services.auth_service import (
@@ -67,8 +68,47 @@ def signup(data: OwnerCreate, db: Session = Depends(get_db)):
     return Token(access_token=token, owner=OwnerResponse.model_validate(owner))
 
 
+@router.post("/login/request")
+def login_request(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
+    """Step 1: Validate credentials, send OTP to email."""
+    ip = request.client.host if request.client else "unknown"
+    _check_rate_limit(ip)
+
+    owner = authenticate_owner(db, data.email, data.password)
+    if not owner:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    identifier = f"login:{data.email}"
+    code = generate_otp(identifier)
+
+    from app.services.email_service import send_otp_email
+    send_otp_email(data.email, code, purpose="login")
+
+    response: dict = {"message": f"Verification code sent to {data.email}"}
+    if settings.APP_ENV != "production" and not settings.SMTP_HOST:
+        response["otp"] = code
+        response["dev_mode"] = True
+    return response
+
+
+@router.post("/login/verify", response_model=Token)
+def login_verify(data: LoginVerify, db: Session = Depends(get_db)):
+    """Step 2: Verify OTP, issue JWT token."""
+    identifier = f"login:{data.email}"
+    if not verify_otp(identifier, data.otp_code):
+        raise HTTPException(status_code=401, detail="Invalid or expired verification code")
+
+    owner = get_owner_by_email(db, data.email)
+    if not owner:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    token = create_access_token({"sub": owner.id})
+    return Token(access_token=token, owner=OwnerResponse.model_validate(owner))
+
+
 @router.post("/login", response_model=Token)
 def login(data: OwnerLogin, request: Request, db: Session = Depends(get_db)):
+    """Legacy single-step login (kept for backward compatibility)."""
     ip = request.client.host if request.client else "unknown"
     _check_rate_limit(ip)
 
