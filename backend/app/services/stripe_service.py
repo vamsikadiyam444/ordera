@@ -14,7 +14,7 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 # ── Map plan names to Stripe Price IDs ────────────────────────────────────────
 
 PLAN_PRICE_MAP = {
-    "essential": settings.STRIPE_PRICE_ID_ESSENTIAL,
+    "basic": settings.STRIPE_PRICE_ID_BASIC,
     "pro": settings.STRIPE_PRICE_ID_PRO,
     "enterprise": settings.STRIPE_PRICE_ID_ENTERPRISE,
 }

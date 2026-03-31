@@ -1,7 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
 import os
-import sys
 
 # Always resolve .env relative to this file (backend/.env), regardless of working directory
 _ENV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
@@ -28,7 +27,6 @@ class Settings(BaseSettings):
     TELNYX_PUBLIC_KEY: str = ""
     TELNYX_CONNECTION_ID: str = ""
     TELNYX_MESSAGING_PROFILE_ID: str = ""
-    TELNYX_PHONE_NUMBER: str = ""  # Platform outbound number for SMS
 
     # Deepgram
     DEEPGRAM_API_KEY: str = ""
@@ -36,7 +34,7 @@ class Settings(BaseSettings):
     # Stripe
     STRIPE_SECRET_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
-    STRIPE_PRICE_ID_ESSENTIAL: str = ""
+    STRIPE_PRICE_ID_BASIC: str = ""
     STRIPE_PRICE_ID_PRO: str = ""
     STRIPE_PRICE_ID_ENTERPRISE: str = ""
 
@@ -60,22 +58,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-
-# ── Production startup validation ─────────────────────────────────────────────
-if settings.APP_ENV == "production":
-    _errors = []
-
-    if settings.SECRET_KEY == "dev-secret-key-change-in-production":
-        _errors.append("SECRET_KEY must be set to a secure random value in production.")
-
-    if settings.DATABASE_URL.startswith("sqlite"):
-        _errors.append("DATABASE_URL must use PostgreSQL in production (sqlite is ephemeral in containers).")
-
-    if not settings.GROQ_API_KEY and not settings.ANTHROPIC_API_KEY:
-        _errors.append("Either GROQ_API_KEY or ANTHROPIC_API_KEY must be set.")
-
-    if _errors:
-        print("\n[STARTUP ERROR] Production configuration is invalid:")
-        for err in _errors:
-            print(f"  - {err}")
-        sys.exit(1)

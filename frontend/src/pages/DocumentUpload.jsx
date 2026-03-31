@@ -71,13 +71,7 @@ export default function DocumentUpload() {
       }
       await loadDocuments()
     } catch (err) {
-      const status = err.response?.status
-      const detail = err.response?.data?.detail || 'Unknown error'
-      const isConflict = status === 409
-      setMessage({
-        text: isConflict ? detail : `Upload failed: ${detail}`,
-        type: isConflict ? 'warning' : 'error',
-      })
+      setMessage({ text: 'Upload failed: ' + (err.response?.data?.detail || 'Unknown error'), type: 'error' })
     } finally {
       setUploading(false)
       setTimeout(() => setMessage({ text: '', type: 'info' }), 6000)
