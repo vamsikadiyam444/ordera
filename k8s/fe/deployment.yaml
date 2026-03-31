@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: 405087531929.dkr.ecr.us-east-1.amazonaws.com/ordera-app:frontend-9a34034c9b39831d152c70a4f412f12b58313a1c
+          image: 405087531929.dkr.ecr.us-east-1.amazonaws.com/ordera-app:frontend-4885edd6f0eac9ac09ba95831c5c253dc87b114c
           imagePullPolicy: Always
           ports:
             - containerPort: 80
