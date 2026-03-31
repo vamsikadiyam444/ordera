@@ -171,6 +171,7 @@ def get_plans():
 def send_plan_change_otp(
     req: PlanOtpRequest,
     current_owner: Owner = Depends(get_current_owner),
+    db: Session = Depends(get_db),
 ):
     """Send OTP to the owner's email for plan change verification."""
     if req.plan not in PLANS:
@@ -179,7 +180,7 @@ def send_plan_change_otp(
         raise HTTPException(status_code=400, detail="Already on this plan")
 
     identifier = f"plan_change:{current_owner.id}:{req.plan}"
-    code = generate_otp(identifier)
+    code = generate_otp(db, identifier)
 
     action = "upgrade" if _plan_rank(req.plan) > _plan_rank(current_owner.plan or "essential") else "downgrade"
     send_otp_email(current_owner.email, code, purpose=f"{action} to {PLANS[req.plan]['name']} plan")
@@ -343,7 +344,7 @@ def create_checkout(
         raise HTTPException(status_code=400, detail="Already on this plan")
 
     identifier = f"plan_change:{current_owner.id}:{req.plan}"
-    if not verify_otp(identifier, req.otp_code):
+    if not verify_otp(db, identifier, req.otp_code):
         raise HTTPException(status_code=400, detail="Invalid or expired verification code")
 
     if not settings.STRIPE_SECRET_KEY:
