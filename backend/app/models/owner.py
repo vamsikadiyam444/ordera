@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Enum
+from sqlalchemy import Column, String, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
@@ -12,9 +12,12 @@ class Owner(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     restaurant_name = Column(String, nullable=False)
-    plan = Column(Enum("basic", "pro", "enterprise", name="plan_enum"), default="basic")
+    # String instead of Enum — allows "essential", "pro", "enterprise" without DB-level constraint issues
+    plan = Column(String, default="essential", nullable=False)
     stripe_customer_id = Column(String, nullable=True)
     stripe_subscription_id = Column(String, nullable=True)
+    # Tracks when the last 80% usage alert was sent — persists across restarts and workers
+    usage_alert_sent_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
