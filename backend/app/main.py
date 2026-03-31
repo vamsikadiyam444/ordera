@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.config import settings
-from app.database import create_tables, SessionLocal
+from app.database import create_tables, run_migrations, SessionLocal
 
 # Import all models so SQLAlchemy registers them before create_all
 import app.models  # noqa: F401
@@ -47,9 +47,10 @@ async def auto_confirm_orders():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: create DB tables
+    # Startup: create DB tables + apply column migrations
     create_tables()
-    print("Database tables created")
+    run_migrations()
+    print("Database tables ready")
     # Start background auto-confirm task (only for PostgreSQL; SQLite can't handle concurrent writes)
     is_sqlite = settings.DATABASE_URL.startswith("sqlite")
     task = None
