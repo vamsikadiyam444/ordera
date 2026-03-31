@@ -21,16 +21,21 @@ services:
   backend:
     build: ./backend
     restart: unless-stopped
-    env_file: ./backend/.env
+    env_file:
+      - path: ./backend/.env
+        required: false   # Won't crash if .env missing; use environment block instead
     environment:
       DATABASE_URL: postgresql://raguser:ragpassword@db:5432/restaurant_agent
+      APP_ENV: development
     ports:
       - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
     volumes:
-      - ./backend:/app   # Hot reload in dev (remove for prod)
+      - ./backend:/app              # Mounts live code for hot reload
+      # pip packages live in /usr/local/lib/ (not /app) so they're unaffected by this mount
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
     build: ./frontend

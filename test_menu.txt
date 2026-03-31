@@ -1,0 +1,18 @@
+RINGA TEST RESTAURANT - MENU
+
+BURGERS
+- Classic Burger - $12.99 - Beef patty, lettuce, tomato, pickles, special sauce
+- Cheese Burger - $13.99 - Classic burger with American cheese
+- Veggie Burger - $11.99 - Plant-based patty, avocado, sprouts
+
+SIDES
+- French Fries - $4.99 - Crispy golden fries
+- Onion Rings - $5.99 - Beer-battered onion rings
+- Side Salad - $4.49 - Mixed greens, cherry tomatoes, vinaigrette
+
+DRINKS
+- Coca-Cola - $2.99
+- Fresh Lemonade - $3.99
+- Milkshake (Vanilla/Chocolate/Strawberry) - $6.99
+
+ALLERGY INFO: Veggie Burger is gluten-free. All items may contain nuts.

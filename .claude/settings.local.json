@@ -3,7 +3,8 @@
     "allow": [
       "Bash(python -c \":*)",
       "Bash(python -c \"import pathlib; pathlib.Path\\(''backend/app/routers/dashboard.py''\\).touch\\(\\)\")",
-      "Bash(powershell -c \"Start-Sleep 3; & ''C:\\\\RAG\\\\backend\\\\venv\\\\Scripts\\\\python.exe'' -c @'':*)"
+      "Bash(powershell -c \"Start-Sleep 3; & ''C:\\\\RAG\\\\backend\\\\venv\\\\Scripts\\\\python.exe'' -c @'':*)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }
