@@ -409,6 +409,51 @@ def create_portal(
     return {"portal_url": portal_url}
 
 
+class ChangePlanRequest(BaseModel):
+    plan: str
+
+
+@router.post("/change-plan")
+def change_plan_direct(
+    req: ChangePlanRequest,
+    current_owner: Owner = Depends(get_current_owner),
+    db: Session = Depends(get_db),
+):
+    """
+    Direct plan change (no Stripe checkout) — used for downgrades from Settings page.
+    Upgrades should go through /create-checkout (Stripe payment required).
+    """
+    if req.plan not in PLANS:
+        raise HTTPException(status_code=400, detail=f"Invalid plan: {req.plan}")
+
+    current_plan = current_owner.plan or "essential"
+    if req.plan == current_plan:
+        raise HTTPException(status_code=400, detail="Already on this plan")
+
+    is_upgrade = _plan_rank(req.plan) > _plan_rank(current_plan)
+    if is_upgrade and settings.STRIPE_SECRET_KEY:
+        raise HTTPException(
+            status_code=400,
+            detail="Upgrades require payment. Use the subscription page to upgrade."
+        )
+
+    # Downgrade (or upgrade in dev mode): cancel Stripe subscription at period end if active
+    if current_owner.stripe_subscription_id and not is_upgrade:
+        cancel_subscription(current_owner.stripe_subscription_id)
+
+    old_plan = current_plan
+    current_owner.plan = req.plan
+    current_owner.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(current_owner)
+    send_plan_change_confirmation(current_owner.email, current_owner.restaurant_name or "", old_plan, req.plan)
+
+    return {
+        "message": f"Plan changed from {old_plan} to {req.plan}",
+        "new_plan": req.plan,
+    }
+
+
 @router.post("/cancel")
 def cancel_current_subscription(
     current_owner: Owner = Depends(get_current_owner),

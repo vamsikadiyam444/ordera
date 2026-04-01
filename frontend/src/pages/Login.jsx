@@ -131,33 +131,74 @@ function OrderFlowAnimation({ glass }) {
   )
 }
 
-/* ── shared glass card style ── */
+/* ── Premium glass card ── */
 const glass = {
-  background: 'rgba(255,255,255,0.045)',
-  border: '1px solid rgba(255,255,255,0.11)',
-  borderRadius: 20,
-  backdropFilter: 'blur(32px)',
-  WebkitBackdropFilter: 'blur(32px)',
-  boxShadow: '0 8px 48px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.2)',
+  background: 'rgba(255,255,255,0.055)',
+  border: '1px solid rgba(255,255,255,0.14)',
+  borderRadius: 24,
+  backdropFilter: 'blur(48px)',
+  WebkitBackdropFilter: 'blur(48px)',
+  boxShadow: '0 24px 80px rgba(0,0,0,0.65), 0 8px 32px rgba(99,102,241,0.15), inset 0 1.5px 0 rgba(255,255,255,0.20), inset 0 -1px 0 rgba(0,0,0,0.25)',
 }
 
+/* ── Input base (no left-pad; icon wrappers add it) ── */
 const inputStyle = {
-  background: 'rgba(255,255,255,0.06)',
-  border: '1px solid rgba(255,255,255,0.10)',
-  borderRadius: 12,
-  color: 'rgba(255,255,255,0.90)',
+  background: 'rgba(255,255,255,0.07)',
+  border: '1px solid rgba(255,255,255,0.13)',
+  borderRadius: 14,
+  color: 'rgba(255,255,255,0.93)',
   fontSize: 14,
-  padding: '11px 14px',
+  padding: '13px 14px 13px 44px',
   width: '100%',
   outline: 'none',
-  transition: 'border-color 0.2s',
+  transition: 'border-color 0.25s, box-shadow 0.25s, background 0.2s',
   boxSizing: 'border-box',
 }
+
+const PREMIUM_CSS = `
+  .prem-input:focus {
+    border-color: rgba(139,92,246,0.7) !important;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.18), 0 0 16px rgba(139,92,246,0.12) !important;
+    background: rgba(255,255,255,0.10) !important;
+  }
+  .prem-btn {
+    position: relative;
+    overflow: hidden;
+    transition: opacity 0.2s, box-shadow 0.25s, transform 0.15s !important;
+  }
+  .prem-btn:not(:disabled):hover {
+    box-shadow: 0 8px 32px rgba(99,102,241,0.65), 0 0 60px rgba(139,92,246,0.25), inset 0 1px 0 rgba(255,255,255,0.22) !important;
+    transform: translateY(-1px) !important;
+  }
+  .prem-btn:not(:disabled):active { transform: translateY(0) !important; }
+  .prem-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%);
+    background-size: 200% 100%;
+    background-position: -200% center;
+    transition: background-position 0.5s;
+  }
+  .prem-btn:not(:disabled):hover::after { background-position: 200% center; }
+  .icon-input-wrap { position: relative; }
+  .icon-input-wrap .field-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    pointer-events: none; opacity: 0.38;
+  }
+  .show-pw-btn {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; padding: 2px; opacity: 0.42;
+    color: rgba(255,255,255,0.8); transition: opacity 0.2s;
+  }
+  .show-pw-btn:hover { opacity: 0.75; }
+`
 
 export default function Login() {
   const [mode, setMode] = useState('login') // 'login' | 'otp' | 'forgot'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [otpCode, setOtpCode] = useState('')
   const [devOtp, setDevOtp] = useState('')
   const [error, setError] = useState('')
@@ -283,6 +324,10 @@ export default function Login() {
 
       {/* ── Right form panel ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', position: 'relative', zIndex: 1 }}>
+        <style>{PREMIUM_CSS}</style>
+        {/* Ambient glow orbs */}
+        <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 380, height: 380, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.10) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(32px)' }} />
+        <div style={{ position: 'absolute', bottom: '18%', right: '10%', width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(24px)' }} />
 
         {/* Mobile logo — 3D glass, matches Signup */}
         <div className="lg:hidden" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 36 }}>
@@ -336,10 +381,11 @@ export default function Login() {
                 </p>
               </div>
 
-              <div style={{ ...glass, padding: 28 }}>
+              <div style={{ ...glass, padding: '32px 30px 28px', position: 'relative' }}>
+                <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.22) 30%, rgba(255,255,255,0.22) 70%, transparent)', borderRadius: 1 }} />
                 <form onSubmit={handleVerifyOtp}>
                   <div style={{ marginBottom: 20 }}>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.48)', marginBottom: 7, letterSpacing: '0.01em' }}>
+                    <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.45)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                       Verification code
                     </label>
                     <input
@@ -350,7 +396,8 @@ export default function Login() {
                       autoFocus
                       placeholder="000000"
                       maxLength={6}
-                      style={{ ...inputStyle, fontSize: 22, fontWeight: 700, letterSpacing: '0.3em', textAlign: 'center' }}
+                      className="prem-input"
+                      style={{ ...inputStyle, fontSize: 24, fontWeight: 700, letterSpacing: '0.35em', textAlign: 'center', padding: '14px 14px' }}
                     />
                     {devOtp && (
                       <div style={{ marginTop: 8, fontSize: 12, color: '#fbbf24', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 8, padding: '6px 10px' }}>
@@ -361,9 +408,11 @@ export default function Login() {
 
                   {error && (
                     <div style={{
-                      background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.22)',
+                      background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.28)',
                       borderRadius: 12, padding: '10px 14px', fontSize: 13, color: '#fca5a5', marginBottom: 16,
+                      display: 'flex', alignItems: 'center', gap: 8,
                     }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                       {error}
                     </div>
                   )}
@@ -371,14 +420,15 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={loading || otpCode.length < 6}
+                    className="prem-btn"
                     style={{
-                      width: '100%', height: 48, borderRadius: 13, border: 'none',
+                      width: '100%', height: 52, borderRadius: 14, border: 'none',
                       cursor: (loading || otpCode.length < 6) ? 'not-allowed' : 'pointer',
-                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                      boxShadow: '0 4px 20px rgba(99,102,241,0.45), inset 0 1px 0 rgba(255,255,255,0.18)',
-                      color: '#fff', fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em',
+                      background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #a855f7 100%)',
+                      boxShadow: '0 6px 28px rgba(99,102,241,0.55), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.22)',
+                      color: '#fff', fontSize: 15, fontWeight: 700,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                      transition: 'opacity 0.2s', opacity: (loading || otpCode.length < 6) ? 0.6 : 1,
+                      opacity: (loading || otpCode.length < 6) ? 0.6 : 1,
                     }}
                   >
                     {loading ? <><SpinnerIcon size={16} /> Verifying...</> : 'Verify & Sign In'}
@@ -389,7 +439,7 @@ export default function Login() {
                   Didn't receive it?{' '}
                   <button
                     onClick={() => { setMode('login'); setOtpCode(''); setDevOtp(''); setError('') }}
-                    style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 13 }}
+                    style={{ color: '#a78bfa', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 13 }}
                   >
                     Try again
                   </button>
@@ -400,61 +450,92 @@ export default function Login() {
           ) : mode === 'login' ? (
             <>
               <div style={{ marginBottom: 28 }}>
-                <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff', letterSpacing: '-0.04em', marginBottom: 6 }}>
+                <h1 style={{ fontSize: 30, fontWeight: 900, letterSpacing: '-0.045em', marginBottom: 7, lineHeight: 1.15,
+                  background: 'linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.75) 100%)',
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                }}>
                   Welcome back
                 </h1>
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.36)' }}>
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.38)', letterSpacing: '0.01em' }}>
                   Sign in to your Ringa dashboard
                 </p>
               </div>
 
-              <div style={{ ...glass, padding: 28 }}>
+              <div style={{ ...glass, padding: '32px 30px 28px', position: 'relative' }}>
+                {/* Top glass edge shimmer line */}
+                <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.22) 30%, rgba(255,255,255,0.22) 70%, transparent)', borderRadius: 1 }} />
+
                 <form onSubmit={handleLogin}>
                   {/* Email */}
                   <div style={{ marginBottom: 18 }}>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.48)', marginBottom: 7, letterSpacing: '0.01em' }}>
+                    <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.45)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                       Email address
                     </label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      required
-                      autoFocus
-                      placeholder="you@restaurant.com"
-                      style={inputStyle}
-                    />
+                    <div className="icon-input-wrap">
+                      <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                      </svg>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        required
+                        autoFocus
+                        placeholder="you@restaurant.com"
+                        className="prem-input"
+                        style={inputStyle}
+                      />
+                    </div>
                   </div>
 
                   {/* Password */}
-                  <div style={{ marginBottom: 20 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.48)', letterSpacing: '0.01em' }}>
+                  <div style={{ marginBottom: 22 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <label style={{ fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                         Password
                       </label>
                       <button
                         type="button"
                         onClick={() => { setMode('forgot'); setError(''); setForgotSent(false) }}
-                        style={{ fontSize: 12, fontWeight: 500, color: '#818cf8', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                        style={{ fontSize: 12, fontWeight: 600, color: '#a78bfa', background: 'none', border: 'none', cursor: 'pointer', padding: 0, letterSpacing: '-0.01em' }}
                       >
                         Forgot password?
                       </button>
                     </div>
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      required
-                      placeholder="••••••••"
-                      style={inputStyle}
-                    />
+                    <div className="icon-input-wrap">
+                      <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                      </svg>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        required
+                        placeholder="••••••••"
+                        className="prem-input"
+                        style={{ ...inputStyle, paddingRight: 44 }}
+                      />
+                      <button type="button" className="show-pw-btn" onClick={() => setShowPassword(p => !p)} tabIndex={-1}>
+                        {showPassword ? (
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+                          </svg>
+                        ) : (
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   {error && (
                     <div style={{
-                      background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.22)',
-                      borderRadius: 12, padding: '10px 14px', fontSize: 13, color: '#fca5a5', marginBottom: 16,
+                      background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.28)',
+                      borderRadius: 12, padding: '10px 14px', fontSize: 13, color: '#fca5a5', marginBottom: 18,
+                      display: 'flex', alignItems: 'center', gap: 8,
                     }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                       {error}
                     </div>
                   )}
@@ -463,13 +544,15 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={loading}
+                    className="prem-btn"
                     style={{
-                      width: '100%', height: 48, borderRadius: 13, border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
-                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                      boxShadow: '0 4px 20px rgba(99,102,241,0.45), inset 0 1px 0 rgba(255,255,255,0.18)',
-                      color: '#fff', fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em',
+                      width: '100%', height: 52, borderRadius: 14, border: 'none',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #a855f7 100%)',
+                      boxShadow: '0 6px 28px rgba(99,102,241,0.55), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.22)',
+                      color: '#fff', fontSize: 15, fontWeight: 700, letterSpacing: '0.005em',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                      transition: 'opacity 0.2s', opacity: loading ? 0.7 : 1,
+                      opacity: loading ? 0.7 : 1,
                     }}
                   >
                     {loading ? <><SpinnerIcon size={16} /> Signing in...</> : 'Sign In'}
@@ -477,16 +560,16 @@ export default function Login() {
                 </form>
 
                 {/* Divider */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
-                  <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.22)', fontWeight: 500 }}>OR</span>
-                  <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '22px 0 18px' }}>
+                  <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10))' }} />
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.08em' }}>OR</span>
+                  <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, rgba(255,255,255,0.10), transparent)' }} />
                 </div>
 
-                <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.32)', margin: 0 }}>
+                <p style={{ textAlign: 'center', fontSize: 13.5, color: 'rgba(255,255,255,0.35)', margin: 0 }}>
                   Don't have an account?{' '}
-                  <Link to="/signup" style={{ color: '#818cf8', fontWeight: 600, textDecoration: 'none' }}>
-                    Start free trial
+                  <Link to="/signup" style={{ color: '#a78bfa', fontWeight: 700, textDecoration: 'none', letterSpacing: '-0.01em' }}>
+                    Start free trial →
                   </Link>
                 </p>
               </div>
@@ -515,7 +598,8 @@ export default function Login() {
                 </p>
               </div>
 
-              <div style={{ ...glass, padding: 28 }}>
+              <div style={{ ...glass, padding: '32px 30px 28px', position: 'relative' }}>
+                <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.22) 30%, rgba(255,255,255,0.22) 70%, transparent)', borderRadius: 1 }} />
                 {forgotSent ? (
                   <div style={{ textAlign: 'center', padding: '12px 0' }}>
                     <div style={{
@@ -535,29 +619,36 @@ export default function Login() {
                 ) : (
                   <form onSubmit={handleForgot}>
                     <div style={{ marginBottom: 20 }}>
-                      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.48)', marginBottom: 7 }}>
+                      <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.45)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                         Email address
                       </label>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        required
-                        autoFocus
-                        placeholder="you@restaurant.com"
-                        style={inputStyle}
-                      />
+                      <div className="icon-input-wrap">
+                        <svg className="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={e => setEmail(e.target.value)}
+                          required
+                          autoFocus
+                          placeholder="you@restaurant.com"
+                          className="prem-input"
+                          style={inputStyle}
+                        />
+                      </div>
                     </div>
                     <button
                       type="submit"
                       disabled={loading}
+                      className="prem-btn"
                       style={{
-                        width: '100%', height: 48, borderRadius: 13, border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
-                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                        boxShadow: '0 4px 20px rgba(99,102,241,0.45), inset 0 1px 0 rgba(255,255,255,0.18)',
+                        width: '100%', height: 52, borderRadius: 14, border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+                        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #a855f7 100%)',
+                        boxShadow: '0 6px 28px rgba(99,102,241,0.55), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.22)',
                         color: '#fff', fontSize: 15, fontWeight: 700,
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                        opacity: loading ? 0.7 : 1, transition: 'opacity 0.2s',
+                        opacity: loading ? 0.7 : 1,
                       }}
                     >
                       {loading ? <><SpinnerIcon size={16} /> Sending...</> : 'Send Reset Link'}
