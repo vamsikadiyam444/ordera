@@ -11,9 +11,21 @@ from app.config import settings
 
 def _send_email(to_email: str, subject: str, html_body: str) -> bool:
     """
-    Send an email. Uses SMTP if configured, otherwise logs to console (dev mode).
-    Returns True on success.
+    Send an email using the best available provider (priority order):
+
+    1. Gmail OAuth2  — if gmail_token.json exists with a valid refresh_token
+    2. Plain SMTP    — if SMTP_HOST + SMTP_USER are configured in .env
+    3. Console log   — dev fallback, always succeeds (returns True)
     """
+    # ── Priority 1: Gmail OAuth2 ──────────────────────────────────────────────
+    try:
+        from app.services.gmail_oauth_service import is_configured, send_email as gmail_send
+        if is_configured():
+            return gmail_send(to_email, subject, html_body)
+    except ImportError:
+        pass  # google-auth not installed yet — fall through to SMTP
+
+    # ── Priority 2: Plain SMTP ────────────────────────────────────────────────
     if settings.SMTP_HOST and settings.SMTP_USER:
         try:
             msg = MIMEMultipart("alternative")
@@ -27,19 +39,19 @@ def _send_email(to_email: str, subject: str, html_body: str) -> bool:
                     server.starttls()
                 server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
                 server.send_message(msg)
-            print(f"[Email] Sent to {to_email}: {subject}")
+            print(f"[Email] Sent via SMTP to {to_email}: {subject}")
             return True
         except Exception as e:
-            print(f"[Email] Error sending to {to_email}: {e}")
+            print(f"[Email] SMTP error sending to {to_email}: {e}")
             return False
-    else:
-        # Dev mode: log to console
-        print(f"\n{'='*60}")
-        print(f"[Email - DEV MODE] To: {to_email}")
-        print(f"[Email - DEV MODE] Subject: {subject}")
-        print(f"[Email - DEV MODE] Body preview: {html_body[:200]}...")
-        print(f"{'='*60}\n")
-        return True
+
+    # ── Priority 3: Dev console fallback ──────────────────────────────────────
+    print(f"\n{'='*60}")
+    print(f"[Email - DEV MODE] To: {to_email}")
+    print(f"[Email - DEV MODE] Subject: {subject}")
+    print(f"[Email - DEV MODE] Body preview: {html_body[:200]}...")
+    print(f"{'='*60}\n")
+    return True
 
 
 def send_otp_email(to_email: str, otp_code: str, purpose: str = "plan change") -> bool:

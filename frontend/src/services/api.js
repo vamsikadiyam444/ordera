@@ -97,4 +97,12 @@ export const subscriptionApi = {
   sendPlanOtp: (plan) => api.post('/subscription/send-plan-otp', { plan }),
 }
 
+// Gmail OAuth2
+export const gmailApi = {
+  status:     () => api.get('/gmail/status'),
+  authorize:  () => api.get('/gmail/authorize'),
+  test:       () => api.post('/gmail/test'),
+  disconnect: () => api.delete('/gmail/disconnect'),
+}
+
 export default api

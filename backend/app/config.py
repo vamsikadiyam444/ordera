@@ -51,6 +51,12 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = ""
 
+    # Gmail OAuth2 — preferred email provider (set via Settings → Email tab)
+    # client_id and client_secret come from Google Cloud Console OAuth2 credentials.
+    # refresh_token is obtained through the admin connect flow and stored in gmail_token.json.
+    GMAIL_CLIENT_ID: str = ""
+    GMAIL_CLIENT_SECRET: str = ""
+
     # Optional
     SENTRY_DSN: Optional[str] = None
 

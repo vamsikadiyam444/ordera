@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
-import { restaurantApi, authApi, subscriptionApi } from '../services/api'
+import { restaurantApi, authApi, subscriptionApi, gmailApi } from '../services/api'
 
 /* ── Constants ── */
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
@@ -404,6 +404,11 @@ export default function Settings() {
   const [phoneOtpCountdown, setPhoneOtpCountdown] = useState(0)
   const [devOtp, setDevOtp] = useState(null) // shows OTP in dev mode
 
+  // Gmail OAuth2 state
+  const [gmailStatus, setGmailStatus]         = useState(null) // null | { connected, email }
+  const [gmailLoading, setGmailLoading]       = useState(false)
+  const [testEmailSending, setTestEmailSending] = useState(false)
+
   // OTP countdown timers
   useEffect(() => {
     if (emailOtpCountdown <= 0) return
@@ -440,6 +445,29 @@ export default function Settings() {
       if (subRes?.data?.current_plan) setCurrentPlan(subRes.data.current_plan)
       else if (me.plan) setCurrentPlan(me.plan)
     }).catch(() => {}).finally(() => setLoading(false))
+  }, [])
+
+  // Gmail status + OAuth2 callback URL param handling
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const gmailParam = params.get('gmail')
+    if (gmailParam === 'connected') {
+      const email = params.get('email') || 'your Gmail account'
+      setToast({ message: `Gmail connected! Sending as ${email}`, type: 'success' })
+      window.history.replaceState({}, '', '/settings')
+      setActiveTab('email')
+    } else if (gmailParam === 'denied') {
+      setToast({ message: 'Gmail authorization was denied', type: 'error' })
+      window.history.replaceState({}, '', '/settings')
+      setActiveTab('email')
+    } else if (gmailParam === 'error') {
+      setToast({ message: 'Gmail connection failed. Try again.', type: 'error' })
+      window.history.replaceState({}, '', '/settings')
+      setActiveTab('email')
+    }
+    gmailApi.status()
+      .then(res => setGmailStatus(res.data))
+      .catch(() => setGmailStatus({ connected: false }))
   }, [])
 
   /* ── Handlers ── */
@@ -628,11 +656,47 @@ export default function Settings() {
     } finally { setSavingAccount(null) }
   }
 
+  /* ── Gmail OAuth2 handlers ── */
+  const handleGmailConnect = async () => {
+    setGmailLoading(true)
+    try {
+      const res = await gmailApi.authorize()
+      // Navigate the full browser window to Google's consent screen.
+      // Google will redirect back to /settings?gmail=connected after authorization.
+      window.location.href = res.data.url
+    } catch (err) {
+      setToast({ message: err.response?.data?.detail || 'Failed to start Gmail connection', type: 'error' })
+      setGmailLoading(false)
+    }
+  }
+
+  const handleGmailTest = async () => {
+    setTestEmailSending(true)
+    try {
+      const res = await gmailApi.test()
+      setToast({ message: `Test email sent to ${res.data.to}!`, type: 'success' })
+    } catch (err) {
+      setToast({ message: err.response?.data?.detail || 'Failed to send test email', type: 'error' })
+    } finally { setTestEmailSending(false) }
+  }
+
+  const handleGmailDisconnect = async () => {
+    setGmailLoading(true)
+    try {
+      await gmailApi.disconnect()
+      setGmailStatus({ connected: false })
+      setToast({ message: 'Gmail disconnected', type: 'success' })
+    } catch (err) {
+      setToast({ message: 'Failed to disconnect Gmail', type: 'error' })
+    } finally { setGmailLoading(false) }
+  }
+
   const tabs = [
     { id: 'info', label: 'General' },
     { id: 'hours', label: 'Hours' },
     { id: 'team', label: 'Team' },
     { id: 'account', label: 'Account' },
+    { id: 'email', label: 'Email' },
   ]
 
   if (loading) return (
@@ -1279,8 +1343,147 @@ export default function Settings() {
           </div>
         )}
 
-        {/* Save button (not on Account tab) */}
-        {activeTab !== 'account' && (
+        {/* ════ TAB: Email ════ */}
+        {activeTab === 'email' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* ── Status Card ── */}
+            <Card title="Gmail OAuth2" description="Send OTP codes, usage alerts, and plan notifications via your Gmail account">
+
+              {/* Connection status row */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '14px 16px', borderRadius: 8, marginBottom: 18,
+                background: gmailStatus?.connected ? '#F0FDF4' : '#F9FAFB',
+                border: `1px solid ${gmailStatus?.connected ? '#BBF7D0' : '#E5E7EB'}`,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{
+                    width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
+                    background: gmailStatus?.connected ? '#22C55E' : '#9CA3AF',
+                  }} />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+                      {gmailStatus === null ? 'Checking…' : gmailStatus.connected ? 'Connected' : 'Not Connected'}
+                    </div>
+                    {gmailStatus?.email && (
+                      <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>
+                        Sending as: <strong>{gmailStatus.email}</strong>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {gmailStatus?.connected && (
+                  <span style={{
+                    padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                    background: '#F0FDF4', color: '#166534', border: '1px solid #BBF7D0',
+                  }}>Active</span>
+                )}
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {!gmailStatus?.connected ? (
+                  <Btn onClick={handleGmailConnect} disabled={gmailLoading}>
+                    {gmailLoading ? 'Redirecting to Google…' : 'Connect Gmail'}
+                  </Btn>
+                ) : (
+                  <>
+                    <Btn onClick={handleGmailTest} disabled={testEmailSending} variant="secondary">
+                      {testEmailSending ? 'Sending…' : 'Send Test Email'}
+                    </Btn>
+                    <Btn onClick={handleGmailConnect} disabled={gmailLoading} variant="secondary">
+                      {gmailLoading ? 'Redirecting…' : 'Reconnect'}
+                    </Btn>
+                    <Btn onClick={handleGmailDisconnect} disabled={gmailLoading} variant="danger">
+                      Disconnect
+                    </Btn>
+                  </>
+                )}
+              </div>
+            </Card>
+
+            {/* ── How It Works ── */}
+            <Card title="How to Connect" description="One-time setup — takes about 30 seconds">
+              {[
+                { n: 1, text: 'Click "Connect Gmail" above' },
+                { n: 2, text: 'Sign in with the Gmail address you want to send FROM (e.g. your restaurant email)' },
+                { n: 3, text: 'Click "Allow" to grant Ringa permission to send emails on your behalf' },
+                { n: 4, text: "You'll be redirected back here. All platform emails now go through Gmail." },
+              ].map(({ n, text }) => (
+                <div key={n} style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 12,
+                  padding: '10px 0',
+                  borderBottom: n < 4 ? '1px solid #F3F4F6' : 'none',
+                }}>
+                  <span style={{
+                    width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+                    background: '#EEF2FF', color: '#4F46E5',
+                    fontSize: 12, fontWeight: 700,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>{n}</span>
+                  <span style={{ fontSize: 14, color: '#374151', paddingTop: 4 }}>{text}</span>
+                </div>
+              ))}
+
+              {/* Google Cloud redirect URI notice */}
+              <div style={{
+                marginTop: 16, padding: '12px 14px',
+                borderRadius: 8, background: '#FFFBEB', border: '1px solid #FDE68A',
+                fontSize: 12, color: '#92400E', lineHeight: 1.6,
+              }}>
+                <strong>One-time Google Cloud setup required:</strong> In your{' '}
+                <a
+                  href="https://console.cloud.google.com/apis/credentials"
+                  target="_blank" rel="noreferrer"
+                  style={{ color: '#92400E', fontWeight: 600 }}
+                >Google Cloud Console</a>,
+                add the following to <em>Authorized redirect URIs</em> for your OAuth2 client:
+                <div style={{
+                  marginTop: 8, padding: '6px 10px', borderRadius: 6,
+                  background: '#FEF3C7', fontFamily: 'monospace', fontSize: 11,
+                  wordBreak: 'break-all',
+                }}>
+                  http://localhost:8002/api/gmail/callback
+                </div>
+                <div style={{ marginTop: 6, fontSize: 11, color: '#B45309' }}>
+                  In production, replace with: <code>https://yourdomain.com/api/gmail/callback</code>
+                </div>
+              </div>
+            </Card>
+
+            {/* ── Email priority ── */}
+            <Card
+              title="Email Provider Priority"
+              description="How Ringa chooses which provider to use"
+              style={{ background: '#F9FAFB' }}
+            >
+              {[
+                { label: '1st — Gmail OAuth2', active: gmailStatus?.connected, desc: 'Sends via Gmail API using your connected account' },
+                { label: '2nd — SMTP',         active: false,                   desc: 'Username + password SMTP configured in .env' },
+                { label: '3rd — Console Log',  active: true,                    desc: 'Dev fallback — prints email to server terminal' },
+              ].map(({ label, active, desc }) => (
+                <div key={label} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '9px 0', borderBottom: '1px solid #F3F4F6',
+                }}>
+                  <span style={{
+                    width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                    background: active ? '#22C55E' : '#D1D5DB',
+                  }} />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: '#111827' }}>{label}</div>
+                    <div style={{ fontSize: 12, color: '#6B7280' }}>{desc}</div>
+                  </div>
+                </div>
+              ))}
+            </Card>
+
+          </div>
+        )}
+
+        {/* Save button (not on Account or Email tab) */}
+        {activeTab !== 'account' && activeTab !== 'email' && (
           <div style={{ marginTop: 20 }}>
             <Btn
               onClick={handleSave}
