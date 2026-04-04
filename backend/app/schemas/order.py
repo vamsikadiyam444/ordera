@@ -20,6 +20,7 @@ class OrderCreate(BaseModel):
     items: List[dict]
     total: float
     special_instructions: Optional[str] = None
+    pay_method: Optional[str] = "cash"  # cash | card_on_pickup | stripe_link
 
 
 class OrderStatusUpdate(BaseModel):

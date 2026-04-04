@@ -37,8 +37,8 @@ from sqlalchemy.orm import Session
 PLANS: dict = {
     "essential": {
         "name": "Essential",
-        "price": 79.99,
-        "price_label": "$79.99/mo",
+        "price": 79,
+        "price_label": "$79/mo",
         "calls_per_month": 150,
         "ai_model": "Claude Haiku",
         "features": [

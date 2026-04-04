@@ -5,30 +5,33 @@ import { subscriptionApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { CheckIcon, SpinnerIcon } from '../components/Icons'
 
-/* ── Apple-inspired plan theming ── */
+/* ── Plan theming — each plan has a distinct premium color ── */
 const PLAN_THEMES = {
   essential: {
-    accent: '#6366f1',
-    accentLight: 'rgba(99,102,241,0.08)',
-    gradient: 'linear-gradient(145deg, #818cf8, #6366f1)',
-    iconBg: 'linear-gradient(135deg, #e0e7ff, #c7d2fe)',
-    ring: 'rgba(99,102,241,0.2)',
+    accent: '#0071e3',
+    accentLight: 'rgba(0,113,227,0.07)',
+    gradient: 'linear-gradient(135deg, #3a8ef6, #0071e3)',
+    headerGradient: 'linear-gradient(135deg, #3a8ef6 0%, #0071e3 60%, #0055b3 100%)',
+    iconBg: 'linear-gradient(135deg, #dce8f7, #c2d4ef)',
+    ring: 'rgba(0,113,227,0.20)',
     label: 'Get Started',
   },
   pro: {
-    accent: '#0071e3',
-    accentLight: 'rgba(0,113,227,0.06)',
-    gradient: 'linear-gradient(145deg, #0077ED, #0071e3)',
-    iconBg: 'linear-gradient(135deg, #d6e8ff, #b3d4fc)',
-    ring: 'rgba(0,113,227,0.15)',
+    accent: '#7c3aed',
+    accentLight: 'rgba(124,58,237,0.07)',
+    gradient: 'linear-gradient(135deg, #a78bfa, #7c3aed)',
+    headerGradient: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 60%, #5b21b6 100%)',
+    iconBg: 'linear-gradient(135deg, #ede9fe, #ddd6fe)',
+    ring: 'rgba(124,58,237,0.22)',
     label: 'Most Popular',
   },
   enterprise: {
-    accent: '#1d1d1f',
-    accentLight: 'rgba(29,29,31,0.04)',
-    gradient: 'linear-gradient(145deg, #2d2d2f, #1d1d1f)',
-    iconBg: 'linear-gradient(135deg, #e8e8ed, #d2d2d7)',
-    ring: 'rgba(29,29,31,0.12)',
+    accent: '#c2820a',
+    accentLight: 'rgba(194,130,10,0.07)',
+    gradient: 'linear-gradient(135deg, #f59e0b, #c2820a)',
+    headerGradient: 'linear-gradient(135deg, #fbbf24 0%, #d97706 55%, #b45309 100%)',
+    iconBg: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+    ring: 'rgba(194,130,10,0.22)',
     label: 'For Teams',
   },
 }
@@ -52,22 +55,15 @@ const PLAN_ICONS = {
   ),
 }
 
-/* ── Premium Usage Card ── */
-function UsageCard({ used, limit, label, subtitle, color = '#0071e3', icon }) {
+/* ── Usage Card (Stitch horizontal-bar design) ── */
+function UsageCard({ used, limit, label, subtitle, color = '#0071e3', icon, prefix = '' }) {
   const unlimited = limit === -1
   const pct = unlimited ? 0 : limit === 0 ? 0 : Math.min((used / limit) * 100, 100)
   const remaining = unlimited ? null : Math.max(limit - used, 0)
 
   const statusColor = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : color
-  const statusLabel = unlimited ? 'Unlimited' : pct >= 90 ? 'Critical' : pct >= 70 ? 'High usage' : 'Healthy'
+  const statusLabel = unlimited ? 'Tracking' : pct >= 90 ? 'Critical' : pct >= 70 ? 'High usage' : 'Healthy'
   const statusDot = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#34c759'
-
-  // Ring math — thinner, larger
-  const size = 120
-  const stroke = 7
-  const r = (size - stroke) / 2
-  const circ = 2 * Math.PI * r
-  const offset = circ - (pct / 100) * circ
 
   return (
     <div style={{
@@ -75,29 +71,25 @@ function UsageCard({ used, limit, label, subtitle, color = '#0071e3', icon }) {
       background: 'var(--card-bg)',
       border: '1px solid var(--border)',
       borderRadius: 20,
-      padding: '22px 24px',
+      padding: '20px 22px',
       overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 20,
     }}>
       {/* Ambient glow */}
       <div style={{
         position: 'absolute', top: -40, right: -40,
-        width: 160, height: 160, borderRadius: '50%',
-        background: `radial-gradient(circle, ${color}18 0%, transparent 70%)`,
+        width: 130, height: 130, borderRadius: '50%',
+        background: `radial-gradient(circle, ${color}14 0%, transparent 70%)`,
         pointerEvents: 'none',
       }} />
 
-      {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14, position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             width: 38, height: 38, borderRadius: 11, flexShrink: 0,
             background: `linear-gradient(135deg, ${color}22, ${color}10)`,
             border: `1px solid ${color}25`,
-            color: color,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             {icon}
           </div>
@@ -115,99 +107,56 @@ function UsageCard({ used, limit, label, subtitle, color = '#0071e3', icon }) {
           border: `1px solid ${statusColor}25`,
           borderRadius: 999, padding: '4px 10px',
         }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: statusDot, boxShadow: `0 0 6px ${statusDot}` }} />
-          <span style={{ fontSize: 11, fontWeight: 600, color: statusColor }}>{statusLabel}</span>
+          <div style={{ width: 5, height: 5, borderRadius: '50%', background: statusDot }} />
+          <span style={{ fontSize: 10, fontWeight: 600, color: statusColor }}>{statusLabel}</span>
         </div>
       </div>
 
-      {/* Main content: ring + hero stat */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-
-        {/* Ring */}
-        <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-          <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
-            <defs>
-              <linearGradient id={`grad-${label.replace(/\s/g,'')}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor={color} />
-                <stop offset="100%" stopColor={statusColor} />
-              </linearGradient>
-            </defs>
-            {/* Track */}
-            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--border)" strokeWidth={stroke} />
-            {/* Progress */}
-            <circle
-              cx={size/2} cy={size/2} r={r} fill="none"
-              stroke={unlimited ? `${color}40` : `url(#grad-${label.replace(/\s/g,'')})`}
-              strokeWidth={stroke}
-              strokeLinecap="round"
-              strokeDasharray={circ}
-              strokeDashoffset={unlimited ? circ * 0.15 : offset}
-              style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(0.34, 1.56, 0.64, 1)', filter: `drop-shadow(0 0 4px ${color}88)` }}
-            />
-          </svg>
-          {/* Center */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      {/* Pill sub-labels + hero pct/infinity */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <span style={{
+            fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 999,
+            background: `${color}10`, color, border: `1px solid ${color}18`,
           }}>
-            {unlimited ? (
-              <span style={{ fontSize: 22, fontWeight: 800, color: color }}>∞</span>
-            ) : (
-              <>
-                <span style={{ fontSize: 26, fontWeight: 900, color: 'var(--text-1)', lineHeight: 1, letterSpacing: '-0.04em' }}>
-                  {Math.round(pct)}<span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-3)' }}>%</span>
-                </span>
-              </>
-            )}
-          </div>
+            Used: {prefix}{used.toLocaleString()}
+          </span>
+          {!unlimited ? (
+            <span style={{
+              fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 999,
+              background: 'var(--border)', color: 'var(--text-3)',
+            }}>
+              Left: {remaining.toLocaleString()}
+            </span>
+          ) : (
+            <span style={{
+              fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 999,
+              background: 'var(--border)', color: 'var(--text-3)',
+            }}>
+              Unlimited
+            </span>
+          )}
         </div>
-
-        {/* Stat stack */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {/* Remaining — hero */}
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-3)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              {unlimited ? 'Available' : 'Remaining'}
-            </div>
-            <div style={{ fontSize: 34, fontWeight: 900, color: statusColor, letterSpacing: '-0.04em', lineHeight: 1 }}>
-              {unlimited ? '∞' : remaining.toLocaleString()}
-            </div>
-          </div>
-
-          {/* Used / Limit row */}
-          <div style={{ display: 'flex', gap: 16 }}>
-            <div>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 500 }}>Used</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-2)', letterSpacing: '-0.02em' }}>
-                {used.toLocaleString()}
-              </div>
-            </div>
-            <div style={{ width: 1, background: 'var(--border)' }} />
-            <div>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 500 }}>Limit</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-2)', letterSpacing: '-0.02em' }}>
-                {unlimited ? '∞' : limit.toLocaleString()}
-              </div>
-            </div>
-          </div>
+        <div style={{ fontSize: 22, fontWeight: 900, color: statusColor, letterSpacing: '-0.03em' }}>
+          {unlimited ? '∞' : `${Math.round(pct)}%`}
         </div>
       </div>
 
-      {/* Progress bar */}
+      {/* Gradient progress bar */}
       <div>
-        <div style={{ height: 5, borderRadius: 999, background: 'var(--border)', overflow: 'hidden' }}>
+        <div style={{ height: 7, borderRadius: 999, background: 'var(--border)', overflow: 'hidden' }}>
           <div style={{
             height: '100%',
-            width: unlimited ? '8%' : `${pct}%`,
+            width: unlimited ? '6%' : `${pct}%`,
             borderRadius: 999,
             background: `linear-gradient(90deg, ${color}, ${statusColor})`,
-            boxShadow: `0 0 8px ${color}66`,
+            boxShadow: `0 0 8px ${color}55`,
             transition: 'width 1.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
           }} />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
           <span style={{ fontSize: 10, color: 'var(--text-3)' }}>0</span>
-          <span style={{ fontSize: 10, color: 'var(--text-3)' }}>{unlimited ? 'Unlimited' : limit.toLocaleString()}</span>
+          <span style={{ fontSize: 10, color: 'var(--text-3)' }}>{unlimited ? 'Unlimited' : `${prefix}${limit.toLocaleString()}`}</span>
         </div>
       </div>
     </div>
@@ -229,19 +178,20 @@ function PlanCard({ planKey, plan, isCurrent, onSelect, changing, index }) {
         animation: `fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${index * 100}ms both`,
       }}
     >
-      {/* Popular label */}
+      {/* Popular badge — gradient pill floating above card */}
       {isPopular && (
         <div className="flex justify-center mb-3">
           <span
-            className="text-xs font-semibold px-3 py-1 rounded-full"
+            className="text-xs font-bold px-4 py-1.5 rounded-full"
             style={{
-              background: theme.accentLight,
-              color: theme.accent,
-              border: `1px solid ${theme.ring}`,
-              letterSpacing: '0.02em',
+              background: theme.gradient,
+              color: '#fff',
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              boxShadow: `0 4px 14px ${theme.ring}`,
             }}
           >
-            {theme.label}
+            Most Popular
           </span>
         </div>
       )}
@@ -251,43 +201,71 @@ function PlanCard({ planKey, plan, isCurrent, onSelect, changing, index }) {
         className="flex-1 rounded-2xl overflow-hidden transition-all duration-500"
         style={{
           background: 'var(--card-bg)',
-          border: isCurrent ? `2px solid ${theme.accent}` : '1px solid var(--border)',
-          boxShadow: hovered
-            ? `0 20px 60px rgba(0,0,0,0.08), 0 8px 20px rgba(0,0,0,0.04)`
-            : 'var(--shadow-sm)',
-          transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
+          border: (isCurrent || isPopular) ? `2px solid ${theme.accent}` : '1px solid var(--border)',
+          boxShadow: isPopular
+            ? `0 0 40px -10px ${theme.ring}, 0 12px 32px rgba(0,0,0,0.07)`
+            : hovered
+              ? `0 20px 60px rgba(0,0,0,0.08), 0 8px 20px rgba(0,0,0,0.04)`
+              : 'var(--shadow-sm)',
+          transform: isPopular
+            ? (hovered ? 'scale(1.04) translateY(-4px)' : 'scale(1.04)')
+            : (hovered ? 'translateY(-4px)' : 'translateY(0)'),
+          zIndex: isPopular ? 1 : 0,
+          position: 'relative',
         }}
       >
-        <div className="p-7">
-          {/* Icon + name */}
-          <div className="flex items-center gap-3 mb-5">
-            <div
-              className="flex items-center justify-center rounded-xl"
-              style={{
-                width: 48,
-                height: 48,
-                background: theme.iconBg,
-                color: theme.accent,
-              }}
-            >
-              {PLAN_ICONS[planKey]}
-            </div>
-            <div>
-              <h3 className="text-base font-bold" style={{ color: 'var(--text-1)', letterSpacing: '-0.01em' }}>
-                {plan.name}
-              </h3>
-              {!isPopular && (
-                <span className="text-xs" style={{ color: 'var(--text-3)' }}>{theme.label}</span>
-              )}
-            </div>
+        {/* ── Colored header band ── */}
+        <div style={{
+          background: theme.headerGradient,
+          padding: '20px 24px 22px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 14,
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          {/* Subtle shimmer overlay */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%)',
+            pointerEvents: 'none',
+          }} />
+          <div style={{
+            width: 46, height: 46, borderRadius: 12, flexShrink: 0,
+            background: 'rgba(255,255,255,0.18)',
+            border: '1px solid rgba(255,255,255,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff',
+            position: 'relative',
+          }}>
+            {PLAN_ICONS[planKey]}
           </div>
+          <div style={{ position: 'relative' }}>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: '#fff', letterSpacing: '-0.01em', margin: 0, lineHeight: 1.2 }}>
+              {plan.name}
+            </h3>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>{theme.label}</span>
+          </div>
+          {isCurrent && (
+            <span style={{
+              marginLeft: 'auto', position: 'relative',
+              fontSize: 10, fontWeight: 700,
+              background: 'rgba(255,255,255,0.22)',
+              color: '#fff',
+              padding: '4px 10px', borderRadius: 999,
+              textTransform: 'uppercase', letterSpacing: '0.07em',
+              border: '1px solid rgba(255,255,255,0.3)',
+            }}>Active</span>
+          )}
+        </div>
 
+        <div className="p-7">
           {/* Price */}
           <div className="mb-1">
             <div className="flex items-baseline gap-0.5">
               <span
                 className="font-extrabold tracking-tight"
-                style={{ fontSize: 40, lineHeight: 1, color: 'var(--text-1)', letterSpacing: '-0.03em' }}
+                style={{ fontSize: 40, lineHeight: 1, color: theme.accent, letterSpacing: '-0.03em' }}
               >
                 ${plan.price}
               </span>
@@ -760,7 +738,7 @@ export default function Subscription() {
 
   return (
     <Layout>
-      <div className="px-8 py-10 max-w-6xl mx-auto">
+      <div className="px-8 py-10 max-w-7xl mx-auto">
 
         {/* ── Hero header ── */}
         <div className="text-center mb-12" style={{ animation: 'fadeInUp 0.5s ease both' }}>

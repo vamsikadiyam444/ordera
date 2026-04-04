@@ -138,7 +138,7 @@ const glass = {
   borderRadius: 24,
   backdropFilter: 'blur(48px)',
   WebkitBackdropFilter: 'blur(48px)',
-  boxShadow: '0 24px 80px rgba(0,0,0,0.65), 0 8px 32px rgba(99,102,241,0.15), inset 0 1.5px 0 rgba(255,255,255,0.20), inset 0 -1px 0 rgba(0,0,0,0.25)',
+  boxShadow: '0 24px 80px rgba(0,0,0,0.65), 0 8px 32px rgba(9,76,178,0.15), inset 0 1.5px 0 rgba(255,255,255,0.20), inset 0 -1px 0 rgba(0,0,0,0.25)',
 }
 
 /* ── Input base (no left-pad; icon wrappers add it) ── */
@@ -157,8 +157,8 @@ const inputStyle = {
 
 const PREMIUM_CSS = `
   .prem-input:focus {
-    border-color: rgba(139,92,246,0.7) !important;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.18), 0 0 16px rgba(139,92,246,0.12) !important;
+    border-color: rgba(51,102,204,0.7) !important;
+    box-shadow: 0 0 0 3px rgba(9,76,178,0.18), 0 0 16px rgba(51,102,204,0.12) !important;
     background: rgba(255,255,255,0.10) !important;
   }
   .prem-btn {
@@ -167,7 +167,7 @@ const PREMIUM_CSS = `
     transition: opacity 0.2s, box-shadow 0.25s, transform 0.15s !important;
   }
   .prem-btn:not(:disabled):hover {
-    box-shadow: 0 8px 32px rgba(99,102,241,0.65), 0 0 60px rgba(139,92,246,0.25), inset 0 1px 0 rgba(255,255,255,0.22) !important;
+    box-shadow: 0 8px 32px rgba(9,76,178,0.55), 0 0 60px rgba(51,102,204,0.22), inset 0 1px 0 rgba(255,255,255,0.22) !important;
     transform: translateY(-1px) !important;
   }
   .prem-btn:not(:disabled):active { transform: translateY(0) !important; }
@@ -273,13 +273,13 @@ export default function Login() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-            boxShadow: '0 0 24px rgba(99,102,241,0.55)',
+            background: 'linear-gradient(135deg, #094cb2, #3366cc)',
+            boxShadow: '0 0 24px rgba(9,76,178,0.55)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <PhoneIcon size={18} className="text-white" />
           </div>
-          <span style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.04em' }}>Ringa</span>
+          <span style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.04em' }}>Ringa AI</span>
         </div>
 
         {/* Hero */}
@@ -287,7 +287,7 @@ export default function Login() {
           {/* pill badge */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 7,
-            background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.28)',
+            background: 'rgba(9,76,178,0.12)', border: '1px solid rgba(9,76,178,0.28)',
             borderRadius: 999, padding: '5px 14px', marginBottom: 22,
           }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#6ee7b7', boxShadow: '0 0 8px #6ee7b7', flexShrink: 0, display: 'inline-block' }} />
@@ -326,23 +326,23 @@ export default function Login() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', position: 'relative', zIndex: 1 }}>
         <style>{PREMIUM_CSS}</style>
         {/* Ambient glow orbs */}
-        <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 380, height: 380, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.10) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(32px)' }} />
-        <div style={{ position: 'absolute', bottom: '18%', right: '10%', width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(24px)' }} />
+        <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 380, height: 380, borderRadius: '50%', background: 'radial-gradient(circle, rgba(9,76,178,0.10) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(32px)' }} />
+        <div style={{ position: 'absolute', bottom: '18%', right: '10%', width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle, rgba(51,102,204,0.08) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(24px)' }} />
 
         {/* Mobile logo — 3D glass, matches Signup */}
         <div className="lg:hidden" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 36 }}>
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <div style={{
               position: 'absolute', inset: -10, borderRadius: 28,
-              background: 'radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(9,76,178,0.25) 0%, transparent 70%)',
               filter: 'blur(8px)',
             }} />
             <div style={{
               width: 64, height: 64, borderRadius: 20, position: 'relative',
-              background: 'linear-gradient(145deg, rgba(148,150,255,0.6) 0%, rgba(99,102,241,0.45) 40%, rgba(139,92,246,0.6) 100%)',
+              background: 'linear-gradient(145deg, rgba(80,130,220,0.6) 0%, rgba(9,76,178,0.50) 40%, rgba(51,102,204,0.6) 100%)',
               backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
               border: '1px solid rgba(255,255,255,0.28)',
-              boxShadow: '0 0 36px rgba(99,102,241,0.6), 0 16px 40px rgba(0,0,0,0.5), inset 0 1.5px 0 rgba(255,255,255,0.45), inset 1px 0 0 rgba(255,255,255,0.18), inset 0 -1.5px 0 rgba(0,0,0,0.3)',
+              boxShadow: '0 0 36px rgba(9,76,178,0.55), 0 16px 40px rgba(0,0,0,0.5), inset 0 1.5px 0 rgba(255,255,255,0.45), inset 1px 0 0 rgba(255,255,255,0.18), inset 0 -1.5px 0 rgba(0,0,0,0.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transform: 'perspective(400px) rotateX(8deg) rotateY(-5deg)',
             }}>
@@ -351,7 +351,7 @@ export default function Login() {
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <span style={{ fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '-0.045em', lineHeight: 1 }}>Ringa</span>
+            <span style={{ fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '-0.045em', lineHeight: 1 }}>Ringa AI</span>
             <span style={{ fontSize: 11.5, fontWeight: 600, color: 'rgba(255,255,255,0.32)', letterSpacing: '0.03em' }}>Never miss a customer call again</span>
           </div>
         </div>
@@ -424,8 +424,8 @@ export default function Login() {
                     style={{
                       width: '100%', height: 52, borderRadius: 14, border: 'none',
                       cursor: (loading || otpCode.length < 6) ? 'not-allowed' : 'pointer',
-                      background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #a855f7 100%)',
-                      boxShadow: '0 6px 28px rgba(99,102,241,0.55), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.22)',
+                      background: 'linear-gradient(135deg, #094cb2 0%, #3366cc 55%, #4477dd 100%)',
+                      boxShadow: '0 6px 28px rgba(9,76,178,0.50), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.22)',
                       color: '#fff', fontSize: 15, fontWeight: 700,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                       opacity: (loading || otpCode.length < 6) ? 0.6 : 1,
@@ -548,8 +548,8 @@ export default function Login() {
                     style={{
                       width: '100%', height: 52, borderRadius: 14, border: 'none',
                       cursor: loading ? 'not-allowed' : 'pointer',
-                      background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #a855f7 100%)',
-                      boxShadow: '0 6px 28px rgba(99,102,241,0.55), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.22)',
+                      background: 'linear-gradient(135deg, #094cb2 0%, #3366cc 55%, #4477dd 100%)',
+                      boxShadow: '0 6px 28px rgba(9,76,178,0.50), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.22)',
                       color: '#fff', fontSize: 15, fontWeight: 700, letterSpacing: '0.005em',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                       opacity: loading ? 0.7 : 1,
@@ -604,10 +604,10 @@ export default function Login() {
                   <div style={{ textAlign: 'center', padding: '12px 0' }}>
                     <div style={{
                       width: 52, height: 52, borderRadius: '50%', margin: '0 auto 16px',
-                      background: 'rgba(99,102,241,0.14)', border: '1px solid rgba(99,102,241,0.3)',
+                      background: 'rgba(9,76,178,0.14)', border: '1px solid rgba(9,76,178,0.3)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <CheckIcon size={22} style={{ color: '#818cf8' }} />
+                      <CheckIcon size={22} style={{ color: '#7eb0f0' }} />
                     </div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Check your inbox</div>
                     <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', lineHeight: 1.65 }}>
@@ -644,8 +644,8 @@ export default function Login() {
                       className="prem-btn"
                       style={{
                         width: '100%', height: 52, borderRadius: 14, border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
-                        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #a855f7 100%)',
-                        boxShadow: '0 6px 28px rgba(99,102,241,0.55), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.22)',
+                        background: 'linear-gradient(135deg, #094cb2 0%, #3366cc 55%, #4477dd 100%)',
+                        boxShadow: '0 6px 28px rgba(9,76,178,0.50), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.22)',
                         color: '#fff', fontSize: 15, fontWeight: 700,
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                         opacity: loading ? 0.7 : 1,

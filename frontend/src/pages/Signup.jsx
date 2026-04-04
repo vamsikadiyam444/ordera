@@ -78,23 +78,23 @@ export default function Signup() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
             width: 48, height: 48, borderRadius: 16, flexShrink: 0,
-            background: 'linear-gradient(145deg, rgba(129,140,248,0.55) 0%, rgba(99,102,241,0.4) 50%, rgba(139,92,246,0.55) 100%)',
+            background: 'linear-gradient(145deg, rgba(80,130,220,0.55) 0%, rgba(9,76,178,0.45) 50%, rgba(51,102,204,0.55) 100%)',
             backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
             border: '1px solid rgba(255,255,255,0.22)',
-            boxShadow: '0 0 28px rgba(99,102,241,0.55), 0 12px 28px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.38), inset 0 -1px 0 rgba(0,0,0,0.25)',
+            boxShadow: '0 0 28px rgba(9,76,178,0.50), 0 12px 28px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.38), inset 0 -1px 0 rgba(0,0,0,0.25)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transform: 'perspective(300px) rotateX(6deg) rotateY(-4deg)',
           }}>
             <PhoneIcon size={20} className="text-white" />
           </div>
-          <span style={{ fontSize: 24, fontWeight: 800, color: '#fff', letterSpacing: '-0.04em' }}>Ringa</span>
+          <span style={{ fontSize: 24, fontWeight: 800, color: '#fff', letterSpacing: '-0.04em' }}>Ringa AI</span>
         </div>
 
         {/* Hero */}
         <div>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 7,
-            background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.28)',
+            background: 'rgba(9,76,178,0.12)', border: '1px solid rgba(9,76,178,0.28)',
             borderRadius: 999, padding: '5px 14px', marginBottom: 22,
           }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#6ee7b7', boxShadow: '0 0 8px #6ee7b7', flexShrink: 0, display: 'inline-block' }} />
@@ -148,15 +148,15 @@ export default function Signup() {
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <div style={{
               position: 'absolute', inset: -10, borderRadius: 28,
-              background: 'radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(9,76,178,0.25) 0%, transparent 70%)',
               filter: 'blur(8px)',
             }} />
             <div style={{
               width: 64, height: 64, borderRadius: 20, position: 'relative',
-              background: 'linear-gradient(145deg, rgba(148,150,255,0.6) 0%, rgba(99,102,241,0.45) 40%, rgba(139,92,246,0.6) 100%)',
+              background: 'linear-gradient(145deg, rgba(80,130,220,0.6) 0%, rgba(9,76,178,0.50) 40%, rgba(51,102,204,0.6) 100%)',
               backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
               border: '1px solid rgba(255,255,255,0.28)',
-              boxShadow: '0 0 36px rgba(99,102,241,0.6), 0 16px 40px rgba(0,0,0,0.5), inset 0 1.5px 0 rgba(255,255,255,0.45), inset 1px 0 0 rgba(255,255,255,0.18), inset 0 -1.5px 0 rgba(0,0,0,0.3)',
+              boxShadow: '0 0 36px rgba(9,76,178,0.55), 0 16px 40px rgba(0,0,0,0.5), inset 0 1.5px 0 rgba(255,255,255,0.45), inset 1px 0 0 rgba(255,255,255,0.18), inset 0 -1.5px 0 rgba(0,0,0,0.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transform: 'perspective(400px) rotateX(8deg) rotateY(-5deg)',
             }}>
@@ -166,7 +166,7 @@ export default function Signup() {
           </div>
           {/* Text stack */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <span style={{ fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '-0.045em', lineHeight: 1 }}>Ringa</span>
+            <span style={{ fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '-0.045em', lineHeight: 1 }}>Ringa AI</span>
             <span style={{ fontSize: 11.5, fontWeight: 600, color: 'rgba(255,255,255,0.32)', letterSpacing: '0.03em' }}>Never miss a customer call again</span>
           </div>
         </div>
@@ -244,8 +244,8 @@ export default function Signup() {
                 disabled={loading}
                 style={{
                   width: '100%', height: 48, borderRadius: 13, border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                  boxShadow: '0 4px 20px rgba(99,102,241,0.45), inset 0 1px 0 rgba(255,255,255,0.18)',
+                  background: 'linear-gradient(135deg, #094cb2, #3366cc)',
+                  boxShadow: '0 4px 20px rgba(9,76,178,0.40), inset 0 1px 0 rgba(255,255,255,0.18)',
                   color: '#fff', fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   opacity: loading ? 0.7 : 1, transition: 'opacity 0.2s',

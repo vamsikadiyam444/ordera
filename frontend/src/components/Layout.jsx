@@ -7,7 +7,6 @@ import {
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard',     icon: DashboardIcon },
-  { path: '/orders',    label: 'Orders',         icon: OrdersIcon    },
   { path: '/menu',      label: 'Menu',           icon: MenuIcon      },
   { path: '/documents', label: 'Knowledge Base', icon: KnowledgeIcon },
   { path: '/analytics',    label: 'Analytics',      icon: AnalyticsIcon   },
@@ -51,8 +50,8 @@ export default function Layout({ children }) {
             style={{
               width: 34,
               height: 34,
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              boxShadow: '0 4px 12px rgba(99,102,241,0.4)',
+              background: 'linear-gradient(135deg, #094cb2, #3366cc)',
+              boxShadow: '0 4px 12px rgba(9,76,178,0.40)',
             }}
           >
             <PhoneIcon size={15} className="text-white" />
@@ -62,7 +61,7 @@ export default function Layout({ children }) {
               className="font-bold text-sm leading-tight"
               style={{ color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.03em' }}
             >
-              Ringa
+              Ringa AI
             </div>
             <div
               className="text-xs leading-tight mt-0.5"
@@ -106,7 +105,7 @@ export default function Layout({ children }) {
               style={{
                 width: 32,
                 height: 32,
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                background: 'linear-gradient(135deg, #094cb2, #3366cc)',
                 fontSize: 11,
               }}
             >
@@ -142,8 +141,8 @@ export default function Layout({ children }) {
             <span
               className="text-xs font-semibold capitalize px-2 py-0.5 rounded-full"
               style={{
-                background: 'rgba(99,102,241,0.18)',
-                color: '#a5b4fc',
+                background: 'rgba(9,76,178,0.20)',
+                color: '#7eb0f0',
               }}
             >
               {owner?.plan || 'free'}

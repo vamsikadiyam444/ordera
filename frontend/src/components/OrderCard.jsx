@@ -81,8 +81,20 @@ export default function OrderCard({ order, onStatusChange, restaurantName }) {
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div>
-          <div className="font-semibold text-base" style={{ color: 'var(--text-1)' }}>
-            {order.customer_name || 'Unknown'}
+          <div className="flex items-center gap-2">
+            <div className="font-semibold text-base" style={{ color: 'var(--text-1)' }}>
+              {order.customer_name || 'Unknown'}
+            </div>
+            {!order.call_sid && (
+              <span style={{
+                fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+                letterSpacing: '0.06em', padding: '2px 6px', borderRadius: 6,
+                background: '#f0fdf4', color: '#16a34a',
+                border: '1px solid #bbf7d0',
+              }}>
+                Walk-in
+              </span>
+            )}
           </div>
           <div className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--text-3)' }}>
             {order.customer_phone && <span>{order.customer_phone}</span>}

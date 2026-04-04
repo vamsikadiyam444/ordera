@@ -53,8 +53,9 @@ export const menuApi = {
 
 // Orders
 export const ordersApi = {
-  list: (params) => api.get('/orders/', { params }),
+  list: (params = {}) => api.get('/orders/', { params }),
   get: (id) => api.get(`/orders/${id}`),
+  create: (data) => api.post('/orders/', data),
   updateStatus: (id, status) => api.patch(`/orders/${id}/status`, { status }),
   cancel: (id) => api.delete(`/orders/${id}`),
 }
@@ -74,8 +75,8 @@ export const knowledgeApi = {
 
 // Dashboard
 export const dashboardApi = {
-  stats:  () => api.get('/dashboard/stats'),
-  calls:  (days) => api.get('/dashboard/calls', { params: { days } }),
+  stats:  (days = 0) => api.get('/dashboard/stats', { params: days > 0 ? { days } : {} }),
+  calls:  (days, hours = 0) => api.get('/dashboard/calls', { params: hours > 0 ? { hours } : { days } }),
   report: (period) => api.get('/dashboard/report', { params: { period } }),
 }
 

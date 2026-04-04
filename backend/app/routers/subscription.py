@@ -146,14 +146,29 @@ def get_current_subscription(
         next_billing = safe_billing_date(cycle_start, cycle_start.year, cycle_start.month + 1)
 
     from app.models.call_log import CallLog
+    from app.models.order import Order
     restaurant_ids = [r.id for r in current_owner.restaurants] if current_owner.restaurants else []
     calls_this_month = 0
+    orders_this_cycle = 0
+    revenue_this_cycle = 0.0
     if restaurant_ids:
         calls_this_month = (
             db.query(CallLog)
             .filter(CallLog.restaurant_id.in_(restaurant_ids), CallLog.created_at >= cycle_start)
             .count()
         )
+        orders_in_cycle = (
+            db.query(Order)
+            .filter(Order.restaurant_id.in_(restaurant_ids), Order.created_at >= cycle_start)
+            .all()
+        )
+        orders_this_cycle = len(orders_in_cycle)
+        revenue_this_cycle = round(sum(
+            o.total for o in orders_in_cycle
+            if o.status != "cancelled" and (
+                o.payment_status == "paid" or o.pay_method in ("cash", "card_on_pickup")
+            )
+        ), 2)
 
     doc_count = len(current_owner.documents) if current_owner.documents else 0
 
@@ -190,6 +205,8 @@ def get_current_subscription(
             "calls_label": f"{calls_this_month} / {'Unlimited' if plan_details['limits']['calls_per_month'] == -1 else plan_details['limits']['calls_per_month']}",
             "documents_used": doc_count,
             "documents_limit": plan_details["limits"]["documents"],
+            "orders_this_cycle": orders_this_cycle,
+            "revenue_this_cycle": revenue_this_cycle,
         },
     )
 

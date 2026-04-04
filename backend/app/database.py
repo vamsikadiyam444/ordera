@@ -36,14 +36,34 @@ def create_tables():
 
 
 def run_migrations():
-    """Add columns that are missing from existing production tables.
+    """Add columns that are missing from existing tables.
     create_all() only creates missing tables, not missing columns — this fills the gap.
-    Safe to run on every startup: each ALTER TABLE uses IF NOT EXISTS / is idempotent.
-    Only runs on PostgreSQL; SQLite always gets a fresh schema via create_all().
+    Safe to run on every startup: idempotent.
     """
-    if not settings.DATABASE_URL.startswith("postgresql"):
-        return  # SQLite gets full schema from create_all() above
+    is_sqlite = settings.DATABASE_URL.startswith("sqlite")
 
+    if is_sqlite:
+        # SQLite doesn't support IF NOT EXISTS for ALTER TABLE ADD COLUMN,
+        # so check PRAGMA table_info first.
+        sqlite_migrations = [
+            ("owners", "usage_alert_sent_at", "ALTER TABLE owners ADD COLUMN usage_alert_sent_at DATETIME"),
+            ("conversations", "language_detected", "ALTER TABLE conversations ADD COLUMN language_detected VARCHAR"),
+        ]
+        with engine.connect() as conn:
+            for table, column, sql in sqlite_migrations:
+                result = conn.execute(text(f"PRAGMA table_info({table})"))
+                existing = [row[1] for row in result.fetchall()]
+                if column not in existing:
+                    try:
+                        conn.execute(text(sql))
+                        conn.commit()
+                        print(f"[Migration] SQLite: added {column} to {table}")
+                    except Exception as e:
+                        conn.rollback()
+                        print(f"[Migration] SQLite: skipped {column} ({e})")
+        return
+
+    # PostgreSQL
     column_migrations = [
         # owners: usage_alert_sent_at added after initial deploy
         "ALTER TABLE owners ADD COLUMN IF NOT EXISTS usage_alert_sent_at TIMESTAMPTZ",

@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 from app.database import get_db
 from app.models.order import Order, OrderItem
 from app.models.restaurant import Restaurant
-from app.schemas.order import OrderResponse, OrderStatusUpdate
+from app.schemas.order import OrderCreate, OrderResponse, OrderStatusUpdate
 from app.middleware.auth import get_current_owner
 from app.models.owner import Owner
 
@@ -36,11 +36,52 @@ def _auto_confirm_stale(db: Session, restaurant_id: str):
         db.commit()
 
 
+@router.post("/", response_model=OrderResponse)
+def create_walk_in_order(
+    data: OrderCreate,
+    db: Session = Depends(get_db),
+    current_owner: Owner = Depends(get_current_owner),
+):
+    """Create a walk-in order manually (from Kitchen Dashboard front desk)."""
+    restaurant = _get_restaurant(db, current_owner)
+
+    pay_method = data.pay_method or "cash"
+    if pay_method not in {"stripe_link", "cash", "card_on_pickup"}:
+        pay_method = "cash"
+
+    order = Order(
+        restaurant_id=restaurant.id,
+        customer_name=data.customer_name or "Walk-in",
+        customer_phone=data.customer_phone,
+        status="new",
+        total=data.total,
+        pay_method=pay_method,
+        payment_status="pending",
+        special_instructions=data.special_instructions,
+    )
+    db.add(order)
+    db.flush()
+
+    for item_data in data.items:
+        db.add(OrderItem(
+            order_id=order.id,
+            name=item_data.get("name", ""),
+            quantity=int(item_data.get("quantity", 1)),
+            price=float(item_data.get("price", 0)),
+            modification=item_data.get("modification") or None,
+        ))
+
+    db.commit()
+    db.refresh(order)
+    return order
+
+
 @router.get("/", response_model=List[OrderResponse])
 def list_orders(
     status: Optional[str] = Query(None),
     order_date: Optional[date] = Query(None),
-    limit: int = Query(50, le=200),
+    days: Optional[int] = Query(None, ge=1),
+    limit: int = Query(500, le=1000),
     db: Session = Depends(get_db),
     current_owner: Owner = Depends(get_current_owner),
 ):
@@ -49,14 +90,17 @@ def list_orders(
     # Auto-confirm stale orders on every list request
     _auto_confirm_stale(db, restaurant.id)
 
+    from sqlalchemy import func
     q = db.query(Order).filter(Order.restaurant_id == restaurant.id)
 
     if status:
         q = q.filter(Order.status == status)
 
     if order_date:
-        from sqlalchemy import func
         q = q.filter(func.date(Order.created_at) == order_date)
+    elif days:
+        since = date.today() - timedelta(days=days)
+        q = q.filter(func.date(Order.created_at) >= since)
 
     return q.order_by(Order.created_at.desc()).limit(limit).all()
 

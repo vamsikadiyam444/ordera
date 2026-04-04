@@ -25,31 +25,43 @@ def _get_restaurant(db: Session, owner: Owner) -> Restaurant:
 
 @router.get("/stats")
 def get_stats(
+    days: int = Query(0, ge=0),
     db: Session = Depends(get_db),
     current_owner: Owner = Depends(get_current_owner),
 ):
-    """Get order stats for the kitchen dashboard."""
+    """Get order stats. days=0 (default) = today only; days>0 = last N days."""
     restaurant = _get_restaurant(db, current_owner)
-    today = date.today()
+    today = datetime.utcnow().date()
 
-    orders_today = db.query(Order).filter(
-        Order.restaurant_id == restaurant.id,
-        func.date(Order.created_at) == today,
-    ).all()
+    if days > 0:
+        since = today - timedelta(days=days)
+        orders_period = db.query(Order).filter(
+            Order.restaurant_id == restaurant.id,
+            func.date(Order.created_at) >= since,
+        ).all()
+    else:
+        orders_period = db.query(Order).filter(
+            Order.restaurant_id == restaurant.id,
+            func.date(Order.created_at) == today,
+        ).all()
 
-    active = [o for o in orders_today if o.status in ("new", "confirmed", "preparing")]
-    ready = [o for o in orders_today if o.status == "ready"]
-    completed = [o for o in orders_today if o.status == "picked_up"]
+    active = [o for o in orders_period if o.status in ("new", "confirmed", "preparing")]
+    ready = [o for o in orders_period if o.status == "ready"]
+    completed = [o for o in orders_period if o.status == "picked_up"]
 
-    revenue_today = sum(o.total for o in orders_today if o.payment_status == "paid")
-    revenue_today += sum(o.total for o in orders_today if o.pay_method == "cash")
+    revenue = sum(
+        o.total for o in orders_period
+        if o.status != "cancelled" and (
+            o.payment_status == "paid" or o.pay_method in ("cash", "card_on_pickup")
+        )
+    )
 
     return {
         "active_orders": len(active),
         "ready_orders": len(ready),
         "completed_orders": len(completed),
-        "total_orders_today": len(orders_today),
-        "revenue_today": round(revenue_today, 2),
+        "total_orders_today": len(orders_period),
+        "revenue_today": round(revenue, 2),
         "orders": [
             {
                 "id": o.id,
@@ -59,13 +71,15 @@ def get_stats(
                 "total": o.total,
                 "payment_status": o.payment_status,
                 "pay_method": o.pay_method,
+                "call_sid": o.call_sid,
+                "special_instructions": o.special_instructions,
                 "items": [
                     {"name": i.name, "quantity": i.quantity, "modification": i.modification}
                     for i in o.items
                 ],
                 "created_at": o.created_at.isoformat() if o.created_at else None,
             }
-            for o in sorted(orders_today, key=lambda x: x.created_at or date.min, reverse=True)
+            for o in sorted(orders_period, key=lambda x: x.created_at or date.min, reverse=True)
         ],
     }
 
@@ -73,17 +87,63 @@ def get_stats(
 @router.get("/calls")
 def get_call_stats(
     days: int = 7,
+    hours: int = Query(0, ge=0),
     db: Session = Depends(get_db),
     current_owner: Owner = Depends(get_current_owner),
 ):
-    """Get call analytics for the past N days."""
+    """Get call analytics. Use hours>0 for hourly grouping, days for daily grouping."""
     restaurant = _get_restaurant(db, current_owner)
-    since = date.today() - timedelta(days=days)
 
-    logs = db.query(CallLog).filter(
-        CallLog.restaurant_id == restaurant.id,
-        func.date(CallLog.created_at) >= since,
-    ).all()
+    if hours > 0:
+        since_dt = datetime.utcnow() - timedelta(hours=hours)
+        logs = db.query(CallLog).filter(
+            CallLog.restaurant_id == restaurant.id,
+            CallLog.created_at >= since_dt,
+        ).all()
+
+        by_period: dict = {}
+        for log in logs:
+            if log.created_at:
+                hour_str = log.created_at.strftime("%H:00")
+                by_period.setdefault(hour_str, 0)
+                by_period[hour_str] += 1
+
+        lang_rows = (
+            db.query(Conversation.language_detected, func.count(Conversation.id).label("count"))
+            .join(CallLog, CallLog.call_sid == Conversation.call_sid)
+            .filter(
+                CallLog.restaurant_id == restaurant.id,
+                CallLog.created_at >= since_dt,
+                Conversation.language_detected.isnot(None),
+            )
+            .group_by(Conversation.language_detected)
+            .all()
+        )
+    else:
+        since = date.today() - timedelta(days=days)
+        logs = db.query(CallLog).filter(
+            CallLog.restaurant_id == restaurant.id,
+            func.date(CallLog.created_at) >= since,
+        ).all()
+
+        by_period: dict = {}
+        for log in logs:
+            if log.created_at:
+                day_str = log.created_at.date().isoformat()
+                by_period.setdefault(day_str, 0)
+                by_period[day_str] += 1
+
+        lang_rows = (
+            db.query(Conversation.language_detected, func.count(Conversation.id).label("count"))
+            .join(CallLog, CallLog.call_sid == Conversation.call_sid)
+            .filter(
+                CallLog.restaurant_id == restaurant.id,
+                func.date(CallLog.created_at) >= since,
+                Conversation.language_detected.isnot(None),
+            )
+            .group_by(Conversation.language_detected)
+            .all()
+        )
 
     total_calls = len(logs)
     completed = [l for l in logs if l.status == "completed"]
@@ -93,26 +153,6 @@ def get_call_stats(
         if completed else 0
     )
 
-    # Group by date
-    by_date: dict = {}
-    for log in logs:
-        if log.created_at:
-            day_str = log.created_at.date().isoformat()
-            by_date.setdefault(day_str, 0)
-            by_date[day_str] += 1
-
-    # Language breakdown — join call_logs → conversations via call_sid
-    lang_rows = (
-        db.query(Conversation.language_detected, func.count(Conversation.id).label("count"))
-        .join(CallLog, CallLog.call_sid == Conversation.call_sid)
-        .filter(
-            CallLog.restaurant_id == restaurant.id,
-            func.date(CallLog.created_at) >= since,
-            Conversation.language_detected.isnot(None),
-        )
-        .group_by(Conversation.language_detected)
-        .all()
-    )
     _lang_labels = {"en": "English", "es": "Spanish", "zh": "Chinese"}
     languages = {
         _lang_labels.get(row.language_detected, row.language_detected): row.count
@@ -126,7 +166,7 @@ def get_call_stats(
         "completion_rate": round(len(completed) / total_calls * 100, 1) if total_calls else 0,
         "avg_duration_seconds": round(avg_duration),
         "calls_by_date": [
-            {"date": d, "count": c} for d, c in sorted(by_date.items())
+            {"date": d, "count": c} for d, c in sorted(by_period.items())
         ],
         "languages": languages,
     }

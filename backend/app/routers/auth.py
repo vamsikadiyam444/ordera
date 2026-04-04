@@ -79,8 +79,8 @@ def login_request(data: LoginRequest, request: Request, db: Session = Depends(ge
     if not owner:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    # No SMTP configured — skip OTP step and issue token directly
-    if not settings.SMTP_HOST:
+    # Skip OTP in dev mode or when SMTP is not configured
+    if settings.APP_ENV != "production" or not settings.SMTP_HOST:
         token = create_access_token({"sub": owner.id})
         return Token(access_token=token, owner=OwnerResponse.model_validate(owner))
 

@@ -491,11 +491,11 @@ function OrderCard3D({ order, onStatusChange, onRefresh }) {
               justifyContent: 'center',
               width: 26, height: 26,
               borderRadius: 8,
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              background: 'linear-gradient(135deg, #094cb2, #3366cc)',
               color: '#fff',
               fontSize: 12,
               fontWeight: 700,
-              boxShadow: '0 2px 6px rgba(99,102,241,0.25)',
+              boxShadow: '0 2px 6px rgba(9,76,178,0.22)',
             }}>{itemCount}</span>
             <span style={{ fontSize: 13, fontWeight: 600, color: '#1d1d1f', letterSpacing: '-0.01em' }}>
               {itemCount === 1 ? '1 item' : `${itemCount} items`}
@@ -564,8 +564,8 @@ function OrderCard3D({ order, onStatusChange, onRefresh }) {
                       justifyContent: 'center',
                       width: 24, height: 24,
                       borderRadius: 7,
-                      background: 'rgba(99,102,241,0.08)',
-                      color: '#6366f1',
+                      background: 'rgba(9,76,178,0.08)',
+                      color: '#094cb2',
                       fontSize: 11,
                       fontWeight: 700,
                     }}>{item.quantity}x</span>
@@ -669,9 +669,9 @@ function OrderCard3D({ order, onStatusChange, onRefresh }) {
                 transition: 'all 0.2s ease',
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(99,102,241,0.06)'
-                e.currentTarget.style.color = '#6366f1'
-                e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'
+                e.currentTarget.style.background = 'rgba(9,76,178,0.06)'
+                e.currentTarget.style.color = '#094cb2'
+                e.currentTarget.style.borderColor = 'rgba(9,76,178,0.18)'
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.background = 'rgba(0,0,0,0.02)'
@@ -688,7 +688,6 @@ function OrderCard3D({ order, onStatusChange, onRefresh }) {
                 onClick={handleAdvance}
                 disabled={advancing}
                 style={{
-                  flex: 1,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   padding: '9px 18px',
                   borderRadius: 10,
@@ -801,7 +800,7 @@ function EmptyState({ filter }) {
       <div style={{
         width: 72, height: 72,
         borderRadius: 22,
-        background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08))',
+        background: 'linear-gradient(135deg, rgba(9,76,178,0.07), rgba(51,102,204,0.07))',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -856,12 +855,20 @@ function SkeletonCard() {
 /* ═══════════════════════════════════════════════════════════════════════════════
    MAIN PAGE
    ═══════════════════════════════════════════════════════════════════════════════ */
+const PERIOD_TABS = [
+  { value: null, label: 'All' },
+  { value: 7,   label: '7 Days' },
+  { value: 15,  label: '15 Days' },
+  { value: 30,  label: '30 Days' },
+]
+
 export default function OrderHistory() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [statusFilter, setStatusFilter] = useState('')
   const [dateFilter, setDateFilter] = useState('')
+  const [periodDays, setPeriodDays] = useState(7)
   const [search, setSearch] = useState('')
 
   const load = useCallback(async (showLoading = true) => {
@@ -871,6 +878,7 @@ export default function OrderHistory() {
       const params = {}
       if (statusFilter) params.status = statusFilter
       if (dateFilter) params.order_date = dateFilter
+      else if (periodDays) params.days = periodDays
       const res = await ordersApi.list(params)
       setOrders(res.data)
     } catch (err) {
@@ -879,7 +887,7 @@ export default function OrderHistory() {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [statusFilter, dateFilter])
+  }, [statusFilter, dateFilter, periodDays])
 
   useEffect(() => { load() }, [load])
 
@@ -900,13 +908,15 @@ export default function OrderHistory() {
     )
   })
 
-  // Stats
+  // Stats — revenue matches Analytics backend logic (cash + paid, not cancelled)
   const stats = {
     total: orders.length,
     active: orders.filter(o => ['new', 'confirmed', 'preparing'].includes(o.status)).length,
     ready: orders.filter(o => o.status === 'ready').length,
     completed: orders.filter(o => o.status === 'picked_up').length,
-    revenue: orders.filter(o => o.payment_status === 'paid').reduce((a, o) => a + (o.total || 0), 0),
+    revenue: orders
+      .filter(o => o.status !== 'cancelled' && (o.payment_status === 'paid' || ['cash', 'card_on_pickup'].includes(o.pay_method)))
+      .reduce((a, o) => a + (o.total || 0), 0),
   }
 
   return (
@@ -945,15 +955,15 @@ export default function OrderHistory() {
 
       <div className="orders-page" style={{
         padding: '32px 40px 60px',
-        maxWidth: 960,
+        maxWidth: 1280,
         margin: '0 auto',
         minHeight: '100vh',
         background: 'linear-gradient(180deg, rgba(245,245,247,0.5) 0%, rgba(255,255,255,0) 40%)',
       }}>
 
         {/* ── Header ── */}
-        <div style={{ marginBottom: 28, animation: 'fadeIn 0.4s ease both' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ marginBottom: 24, animation: 'fadeIn 0.4s ease both' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
               <h1 style={{
                 fontSize: 34,
@@ -972,40 +982,60 @@ export default function OrderHistory() {
                 fontWeight: 400,
                 letterSpacing: '-0.01em',
               }}>
-                Track, manage, and fulfill customer orders in real time.
+                {periodDays ? `Last ${periodDays} days` : 'All orders'} · {stats.total} total
               </p>
             </div>
 
-            <button
-              onClick={() => load(false)}
-              disabled={refreshing}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '9px 18px',
-                borderRadius: 12,
-                border: '1px solid rgba(0,0,0,0.08)',
-                background: 'rgba(255,255,255,0.7)',
-                backdropFilter: 'blur(20px)',
-                color: '#1d1d1f',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: refreshing ? 'wait' : 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                letterSpacing: '-0.01em',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.95)'
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.7)'
-                e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'
-              }}
-            >
-              <RefreshIcon spinning={refreshing} />
-              {refreshing ? 'Refreshing...' : 'Refresh'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* Period tabs */}
+              <div style={{ display: 'flex', background: 'rgba(0,0,0,0.05)', borderRadius: 10, padding: 3, gap: 2 }}>
+                {PERIOD_TABS.map(t => (
+                  <button
+                    key={String(t.value)}
+                    onClick={() => { setPeriodDays(t.value); setDateFilter('') }}
+                    style={{
+                      padding: '6px 14px', borderRadius: 7, border: 'none', cursor: 'pointer',
+                      fontSize: 12, fontWeight: 600, transition: 'all 0.15s ease',
+                      background: periodDays === t.value ? '#fff' : 'transparent',
+                      color: periodDays === t.value ? '#094cb2' : '#86868b',
+                      boxShadow: periodDays === t.value ? '0 1px 4px rgba(0,0,0,0.10)' : 'none',
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => load(false)}
+                disabled={refreshing}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '9px 14px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(0,0,0,0.08)',
+                  background: 'rgba(255,255,255,0.7)',
+                  backdropFilter: 'blur(20px)',
+                  color: '#1d1d1f',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: refreshing ? 'wait' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.95)'
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.7)'
+                  e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'
+                }}
+              >
+                <RefreshIcon spinning={refreshing} />
+                {refreshing ? 'Refreshing...' : 'Refresh'}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1020,7 +1050,7 @@ export default function OrderHistory() {
           <StatPill label="Active" value={stats.active} color="#FF9F0A" glow="rgba(255,159,10,0.15)" />
           <StatPill label="Ready" value={stats.ready} color="#30D158" glow="rgba(48,209,88,0.15)" />
           <StatPill label="Done" value={stats.completed} color="#86868b" />
-          <StatPill label="Revenue" value={`$${stats.revenue.toFixed(0)}`} color="#6366f1" glow="rgba(99,102,241,0.12)" />
+          <StatPill label="Revenue" value={`$${stats.revenue.toFixed(0)}`} color="#094cb2" glow="rgba(9,76,178,0.12)" />
         </div>
 
         {/* ── Filters ── */}
@@ -1088,11 +1118,11 @@ export default function OrderHistory() {
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '7px 12px',
             borderRadius: 10,
-            background: dateFilter ? 'rgba(99,102,241,0.06)' : 'rgba(0,0,0,0.03)',
-            border: dateFilter ? '1px solid rgba(99,102,241,0.15)' : '1px solid rgba(0,0,0,0.04)',
+            background: dateFilter ? 'rgba(9,76,178,0.06)' : 'rgba(0,0,0,0.03)',
+            border: dateFilter ? '1px solid rgba(9,76,178,0.15)' : '1px solid rgba(0,0,0,0.04)',
             transition: 'all 0.2s ease',
           }}>
-            <span style={{ color: dateFilter ? '#6366f1' : '#aeaeb2', flexShrink: 0 }}><CalendarIcon /></span>
+            <span style={{ color: dateFilter ? '#094cb2' : '#aeaeb2', flexShrink: 0 }}><CalendarIcon /></span>
             <input
               type="date"
               value={dateFilter}
@@ -1102,7 +1132,7 @@ export default function OrderHistory() {
                 background: 'transparent',
                 outline: 'none',
                 fontSize: 12,
-                color: dateFilter ? '#6366f1' : '#86868b',
+                color: dateFilter ? '#094cb2' : '#86868b',
                 fontWeight: 500,
                 cursor: 'pointer',
               }}
@@ -1111,10 +1141,10 @@ export default function OrderHistory() {
               <button
                 onClick={() => setDateFilter('')}
                 style={{
-                  border: 'none', background: 'rgba(99,102,241,0.1)',
+                  border: 'none', background: 'rgba(9,76,178,0.10)',
                   borderRadius: '50%', width: 16, height: 16,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', color: '#6366f1', fontSize: 10, fontWeight: 700,
+                  cursor: 'pointer', color: '#094cb2', fontSize: 10, fontWeight: 700,
                 }}
               >
                 ✕
@@ -1139,10 +1169,10 @@ export default function OrderHistory() {
                     borderRadius: 8,
                     border: 'none',
                     background: active
-                      ? (tabCfg ? tabCfg.bg : 'rgba(99,102,241,0.08)')
+                      ? (tabCfg ? tabCfg.bg : 'rgba(9,76,178,0.08)')
                       : 'transparent',
                     color: active
-                      ? (tabCfg ? tabCfg.color : '#6366f1')
+                      ? (tabCfg ? tabCfg.color : '#094cb2')
                       : '#86868b',
                     fontSize: 12,
                     fontWeight: active ? 600 : 500,
@@ -1180,18 +1210,25 @@ export default function OrderHistory() {
         </div>
 
         {/* ── Order list ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 14,
+        }}>
           {loading ? (
             <>
               <SkeletonCard />
               <SkeletonCard />
               <SkeletonCard />
+              <SkeletonCard />
             </>
           ) : filtered.length === 0 ? (
-            <EmptyState filter={statusFilter || search || dateFilter} />
+            <div style={{ gridColumn: '1 / -1' }}>
+              <EmptyState filter={statusFilter || search || dateFilter} />
+            </div>
           ) : (
             filtered.map((order, i) => (
-              <div key={order.id} style={{ animationDelay: `${i * 0.06}s` }}>
+              <div key={order.id} style={{ animationDelay: `${i * 0.04}s` }}>
                 <OrderCard3D
                   order={order}
                   onRefresh={() => load(false)}
@@ -1219,7 +1256,7 @@ export default function OrderHistory() {
                   marginLeft: 8,
                   border: 'none',
                   background: 'none',
-                  color: '#6366f1',
+                  color: '#094cb2',
                   fontSize: 12,
                   fontWeight: 600,
                   cursor: 'pointer',
