@@ -151,18 +151,16 @@ def safe_billing_date(base_date: datetime, year: int, month: int) -> datetime:
 def billing_cycle_start(owner) -> datetime:
     """
     Calculate the start of the owner's current billing cycle.
-
-    The cycle anchors to the same day-of-month as account creation.
-    If we're before this month's billing date, we use last month's date.
-
-    Example:
-        Created: Jan 15 → cycles on the 15th of every month.
-        Today: Feb 10  → current cycle started Jan 15.
-        Today: Feb 20  → current cycle started Feb 15.
     """
-    created = owner.created_at or datetime.utcnow()
+    from datetime import timezone
+
+    created = owner.created_at or datetime.now(timezone.utc)
     if isinstance(created, str):
         created = datetime.fromisoformat(created)
+
+    # Make created timezone naive to match
+    if created.tzinfo is not None:
+        created = created.replace(tzinfo=None)
 
     now = datetime.utcnow()
     cycle_start = safe_billing_date(created, now.year, now.month)
@@ -175,7 +173,6 @@ def billing_cycle_start(owner) -> datetime:
             cycle_start = safe_billing_date(created, now.year, now.month - 1)
 
     return cycle_start
-
 
 # ── Usage alerts ──────────────────────────────────────────────────────────────
 
