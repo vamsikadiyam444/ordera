@@ -9,6 +9,7 @@ import Settings from './pages/Settings'
 import OrderHistory from './pages/OrderHistory'
 import Analytics from './pages/Analytics'
 import Subscription from './pages/Subscription'
+import Inventory from './pages/Inventory'
 
 function ProtectedRoute({ children }) {
   const { owner } = useAuth()
@@ -33,6 +34,7 @@ function AppRoutes() {
       <Route path="/orders" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
       <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
+      <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )

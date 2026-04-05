@@ -2,16 +2,17 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   DashboardIcon, OrdersIcon, MenuIcon, KnowledgeIcon,
-  SettingsIcon, AnalyticsIcon, LogoutIcon, PhoneIcon, CreditCardIcon,
+  SettingsIcon, AnalyticsIcon, LogoutIcon, PhoneIcon, CreditCardIcon, InventoryIcon,
 } from './Icons'
 
 const navItems = [
-  { path: '/dashboard', label: 'Dashboard',     icon: DashboardIcon },
-  { path: '/menu',      label: 'Menu',           icon: MenuIcon      },
-  { path: '/documents', label: 'Knowledge Base', icon: KnowledgeIcon },
-  { path: '/analytics',    label: 'Analytics',      icon: AnalyticsIcon   },
-  { path: '/subscription', label: 'Subscription',   icon: CreditCardIcon  },
-  { path: '/settings',    label: 'Settings',       icon: SettingsIcon    },
+  { path: '/dashboard',  label: 'Dashboard',     icon: DashboardIcon  },
+  { path: '/menu',       label: 'Menu',           icon: MenuIcon       },
+  { path: '/inventory',  label: 'Inventory',      icon: InventoryIcon  },
+  { path: '/documents',  label: 'Knowledge Base', icon: KnowledgeIcon  },
+  { path: '/analytics',  label: 'Analytics',      icon: AnalyticsIcon  },
+  { path: '/subscription', label: 'Subscription', icon: CreditCardIcon },
+  { path: '/settings',   label: 'Settings',       icon: SettingsIcon   },
 ]
 
 export default function Layout({ children }) {

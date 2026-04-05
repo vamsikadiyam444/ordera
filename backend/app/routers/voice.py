@@ -266,6 +266,18 @@ async def handle_speech(
                 call_log.status = "completed"
             db.commit()
 
+            # Deduct ingredients from inventory (best-effort — never blocks order)
+            try:
+                from app.services.inventory_service import deduct_order_ingredients
+                deduct_order_ingredients(
+                    order_id=order.id,
+                    restaurant_id=restaurant.id,
+                    order_items=order_data.get("items", []),
+                    db=db,
+                )
+            except Exception as _inv_err:
+                print(f"[Inventory] Deduction failed for order {order.id}: {_inv_err}")
+
             # Strip the silent ORDER_COMPLETE block from the spoken response
             clean_text = re.sub(r"<ORDER_COMPLETE>[\s\S]*?</ORDER_COMPLETE>", "", ai_text).strip()
             if not clean_text:
