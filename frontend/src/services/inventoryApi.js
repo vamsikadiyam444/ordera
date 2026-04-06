@@ -50,4 +50,9 @@ export const inventoryApi = {
     params.append('limit', limit)
     return api.get(`/inventory/logs?${params.toString()}`)
   },
+
+  extractInvoice: (formData) =>
+    api.post('/inventory/invoice/extract', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 }

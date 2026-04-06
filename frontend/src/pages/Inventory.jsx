@@ -9,6 +9,7 @@ import WasteEntry from '../components/inventory/WasteEntry'
 import WasteCard from '../components/inventory/WasteCard'
 import ProfitCard from '../components/inventory/ProfitCard'
 import RecommendationsTable from '../components/inventory/RecommendationsTable'
+import InvoiceUpload from '../components/inventory/InvoiceUpload'
 
 const TABS = [
   { id: 'stock',   label: 'Stock' },
@@ -16,6 +17,7 @@ const TABS = [
   { id: 'profit',  label: 'Profit' },
   { id: 'waste',   label: 'Waste' },
   { id: 'reorder', label: 'Reorder' },
+  { id: 'invoice', label: 'Invoice Scanner' },
 ]
 
 export default function Inventory() {
@@ -173,6 +175,16 @@ export default function Inventory() {
                 Weekly reorder suggestions based on the last 7 days of usage.
               </div>
               <RecommendationsTable />
+            </div>
+          )}
+
+          {/* ── Invoice Scanner ── */}
+          {tab === 'invoice' && (
+            <div>
+              <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 20 }}>
+                Upload a supplier invoice — AI will extract item names, quantities, and costs and add them to your inventory.
+              </div>
+              <InvoiceUpload inventoryItems={items} onSuccess={loadItems} />
             </div>
           )}
         </div>

@@ -4,7 +4,16 @@
       "Bash(python -c \":*)",
       "Bash(python -c \"import pathlib; pathlib.Path\\(''backend/app/routers/dashboard.py''\\).touch\\(\\)\")",
       "Bash(powershell -c \"Start-Sleep 3; & ''C:\\\\RAG\\\\backend\\\\venv\\\\Scripts\\\\python.exe'' -c @'':*)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "mcp__stitch__get_screen",
+      "Bash(C:/Ringa/backend/venv/Scripts/pip install:*)",
+      "Bash(ls C:/Ringa/backend/venv/Scripts/pip*)",
+      "Bash(\"C:/Ringa/backend/venv/Scripts/pip.exe\" install:*)",
+      "Bash(\"C:/Ringa/backend/venv/Scripts/python.exe\" -m pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client)",
+      "Bash(\"C:/Ringa/backend/venv/Scripts/python.exe\" -c \"import google.oauth2.credentials; import google_auth_oauthlib.flow; import googleapiclient.discovery; print\\(''All Google packages OK in venv''\\)\")",
+      "Bash(\"C:/Ringa/backend/venv/Scripts/python.exe\" -c \"import requests_oauthlib; print\\(''requests_oauthlib version:'', requests_oauthlib.__version__\\)\")",
+      "Bash(\"C:/Ringa/backend/venv/Scripts/python.exe\" -c \":*)",
+      "Bash(\"venv/Scripts/python.exe\" -c \":*)"
     ]
   }
 }

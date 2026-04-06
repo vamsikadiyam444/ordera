@@ -9,6 +9,10 @@ Rules enforced here:
 - Owner isolation enforced at router level (restaurant_id passed in)
 - Unmapped menu items are silently skipped (normal for new restaurants)
 """
+import base64
+import io
+import json
+import re
 from datetime import datetime, timedelta
 from typing import List, Optional
 
@@ -317,89 +321,244 @@ def get_waste_analytics(restaurant_id: str, db: Session) -> dict:
     }
 
 
-# ── Analytics (profit + waste + top cost items) ───────────────────────────────
+# ── Analytics (profit + waste + top cost items + profit conversion ratio) ──────
 
 def get_analytics(restaurant_id: str, days: int, db: Session) -> dict:
     """
-    Returns daily profit, waste summary, top cost items, and low stock items.
+    Returns full profit analytics including:
+    - Daily revenue / COGS / profit
+    - Profit Conversion Ratio = Gross Profit / Revenue × 100
+    - Wastage cost breakdown
+    - Top cost items, low stock items
     """
     cutoff = datetime.utcnow() - timedelta(days=days)
 
-    # Fetch all orders for this restaurant in the period
+    # Pre-load all inventory items for this restaurant into a map
+    inv_items_map = {
+        i.id: i
+        for i in db.query(InventoryItem)
+        .filter(InventoryItem.restaurant_id == restaurant_id)
+        .all()
+    }
+
     orders = (
         db.query(Order)
-        .filter(
-            Order.restaurant_id == restaurant_id,
-            Order.created_at >= cutoff,
-        )
+        .filter(Order.restaurant_id == restaurant_id, Order.created_at >= cutoff)
         .all()
     )
 
-    # Build daily profit buckets
     daily: dict = {}
+    total_revenue = 0.0
+    total_cogs = 0.0
+
     for order in orders:
         date_key = order.created_at.strftime("%Y-%m-%d")
         if date_key not in daily:
-            daily[date_key] = {"date": date_key, "revenue": 0.0, "cost": 0.0, "profit": 0.0}
-        daily[date_key]["revenue"] += order.total or 0.0
+            daily[date_key] = {"date": date_key, "revenue": 0.0, "cogs": 0.0, "wastage": 0.0, "profit": 0.0}
 
-        # Get ingredient cost from logs
+        order_rev = order.total or 0.0
+        daily[date_key]["revenue"] += order_rev
+        total_revenue += order_rev
+
         logs = (
             db.query(InventoryLog)
-            .filter(
-                InventoryLog.order_id == order.id,
-                InventoryLog.change_type == "used",
-            )
+            .filter(InventoryLog.order_id == order.id, InventoryLog.change_type == "used")
             .all()
         )
         for log in logs:
-            inv_item = db.query(InventoryItem).filter(InventoryItem.id == log.inventory_item_id).first()
-            if inv_item:
-                daily[date_key]["cost"] += log.quantity * inv_item.cost_per_unit
+            inv = inv_items_map.get(log.inventory_item_id)
+            if inv:
+                cost = log.quantity * inv.cost_per_unit
+                daily[date_key]["cogs"] += cost
+                total_cogs += cost
 
+    # Wastage per day in period
+    total_wastage_cost = 0.0
+    for inv in inv_items_map.values():
+        waste_logs = (
+            db.query(InventoryLog)
+            .filter(
+                InventoryLog.inventory_item_id == inv.id,
+                InventoryLog.change_type == "wasted",
+                InventoryLog.timestamp >= cutoff,
+            )
+            .all()
+        )
+        for wlog in waste_logs:
+            cost = wlog.quantity * inv.cost_per_unit
+            total_wastage_cost += cost
+            date_key = wlog.timestamp.strftime("%Y-%m-%d")
+            if date_key in daily:
+                daily[date_key]["wastage"] += cost
+
+    # Finalise daily rows
     for d in daily.values():
-        d["cost"] = round(d["cost"], 2)
+        d["cogs"] = round(d["cogs"], 2)
+        d["wastage"] = round(d["wastage"], 2)
         d["revenue"] = round(d["revenue"], 2)
-        d["profit"] = round(d["revenue"] - d["cost"], 2)
+        d["profit"] = round(d["revenue"] - d["cogs"] - d["wastage"], 2)
 
     daily_profit = sorted(daily.values(), key=lambda x: x["date"])
 
-    # Waste summary
+    # Summary — Profit Conversion Ratio
+    gross_profit = total_revenue - total_cogs - total_wastage_cost
+    pcr = round((gross_profit / total_revenue * 100), 1) if total_revenue > 0 else 0.0
+
+    summary = {
+        "total_revenue": round(total_revenue, 2),
+        "total_cogs": round(total_cogs, 2),
+        "total_wastage_cost": round(total_wastage_cost, 2),
+        "gross_profit": round(gross_profit, 2),
+        "profit_conversion_ratio": pcr,
+    }
+
+    # Waste analytics
     waste_summary = get_waste_analytics(restaurant_id, db)
 
-    # Top cost items by usage cost in period
-    inv_items = (
-        db.query(InventoryItem)
-        .filter(InventoryItem.restaurant_id == restaurant_id)
-        .all()
-    )
+    # Top cost items
     top_cost = []
-    for item in inv_items:
+    for inv in inv_items_map.values():
         used_logs = (
             db.query(InventoryLog)
             .filter(
-                InventoryLog.inventory_item_id == item.id,
+                InventoryLog.inventory_item_id == inv.id,
                 InventoryLog.change_type == "used",
                 InventoryLog.timestamp >= cutoff,
             )
             .all()
         )
-        total_cost = sum(l.quantity for l in used_logs) * item.cost_per_unit
+        total_cost = sum(l.quantity for l in used_logs) * inv.cost_per_unit
         if total_cost > 0:
-            top_cost.append({"name": item.name, "total_cost_last_n_days": round(total_cost, 2)})
+            top_cost.append({"name": inv.name, "total_cost_last_n_days": round(total_cost, 2)})
 
     top_cost.sort(key=lambda x: x["total_cost_last_n_days"], reverse=True)
 
-    # Low stock items
     low_stock = [
         {"id": i.id, "name": i.name, "unit": i.unit, "quantity": i.quantity, "threshold": i.low_stock_threshold}
-        for i in inv_items
+        for i in inv_items_map.values()
         if i.low_stock_threshold > 0 and i.quantity < i.low_stock_threshold
     ]
 
     return {
+        "summary": summary,
         "daily_profit": daily_profit,
         "waste_summary": waste_summary,
         "top_cost_items": top_cost[:10],
         "low_stock_items": low_stock,
     }
+
+
+# ── AI Invoice Extraction ─────────────────────────────────────────────────────
+
+INVOICE_PROMPT = """Extract all line items from this supplier invoice.
+Return ONLY valid JSON — no markdown, no explanation:
+{
+  "supplier": "Supplier name or null",
+  "invoice_date": "YYYY-MM-DD or null",
+  "invoice_number": "invoice number or null",
+  "items": [
+    {
+      "name": "ingredient or product name",
+      "quantity": 10.0,
+      "unit": "lbs",
+      "unit_price": 3.50,
+      "total_cost": 35.00
+    }
+  ],
+  "invoice_total": 150.00
+}
+
+Rules:
+- unit must be one of: lbs, grams, oz, gallons, pieces, liters — convert if needed, pick closest
+- Only extract food/ingredient/product line items — skip taxes, delivery fees, discounts
+- quantity and unit_price must be numbers
+- If a value is missing use null
+"""
+
+
+def _parse_invoice_json(text: str) -> dict:
+    """Strip markdown fences and parse JSON from AI response."""
+    text = re.sub(r"```(?:json)?", "", text).strip()
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        return {"items": [], "supplier": None, "invoice_date": None, "invoice_number": None, "invoice_total": None}
+    try:
+        return json.loads(match.group())
+    except json.JSONDecodeError:
+        return {"items": [], "supplier": None, "invoice_date": None, "invoice_number": None, "invoice_total": None}
+
+
+def _extract_from_text(text: str) -> dict:
+    """Pass text invoice content to Claude and return parsed result."""
+    from app.services.ai_engine import _chat
+    result = _chat(
+        fast=False,
+        system="You are an expert invoice data extractor. Return only valid JSON as instructed.",
+        messages=[{"role": "user", "content": f"{INVOICE_PROMPT}\n\nINVOICE TEXT:\n{text[:8000]}"}],
+        max_tokens=2000,
+    )
+    return _parse_invoice_json(result)
+
+
+def _extract_from_image(content: bytes, media_type: str) -> dict:
+    """Use Claude vision to extract invoice data from an image."""
+    from app.services.ai_engine import _anthropic_client, HAIKU_MODEL
+    if not _anthropic_client:
+        raise ValueError("Image invoice scanning requires ANTHROPIC_API_KEY in .env")
+    if media_type not in ("image/jpeg", "image/png", "image/webp", "image/gif"):
+        media_type = "image/jpeg"
+    b64 = base64.standard_b64encode(content).decode("utf-8")
+    resp = _anthropic_client.messages.create(
+        model=HAIKU_MODEL,
+        max_tokens=2000,
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": b64}},
+                {"type": "text", "text": INVOICE_PROMPT},
+            ],
+        }],
+    )
+    return _parse_invoice_json(resp.content[0].text)
+
+
+def _extract_pdf_text(content: bytes) -> str:
+    from pypdf import PdfReader
+    reader = PdfReader(io.BytesIO(content))
+    return "\n".join(page.extract_text() or "" for page in reader.pages)
+
+
+def _extract_docx_text(content: bytes) -> str:
+    from docx import Document
+    doc = Document(io.BytesIO(content))
+    return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+
+
+def extract_invoice(content: bytes, filename: str, content_type: str) -> dict:
+    """
+    Main invoice extraction entry point.
+    Routes to the right parser based on file type.
+    Returns: {supplier, invoice_date, invoice_number, invoice_total, items[]}
+    """
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+
+    if ext in ("jpg", "jpeg", "png", "webp") or (content_type or "").startswith("image/"):
+        mt = content_type if content_type in ("image/jpeg", "image/png", "image/webp") else f"image/{ext or 'jpeg'}"
+        return _extract_from_image(content, mt)
+
+    elif ext == "pdf" or content_type == "application/pdf":
+        text = _extract_pdf_text(content)
+        if not text.strip():
+            raise ValueError("Could not extract text from this PDF. Try uploading a photo of the invoice instead.")
+        return _extract_from_text(text)
+
+    elif ext in ("docx", "doc"):
+        text = _extract_docx_text(content)
+        return _extract_from_text(text)
+
+    elif ext in ("txt", "csv", "tsv"):
+        text = content.decode("utf-8", errors="ignore")
+        return _extract_from_text(text)
+
+    else:
+        raise ValueError(f"Unsupported file type: .{ext}. Upload a PDF, image (JPG/PNG/WEBP), or DOCX.")

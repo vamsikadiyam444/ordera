@@ -10,7 +10,7 @@ Every endpoint:
 """
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -32,6 +32,7 @@ from app.schemas.inventory_schemas import (
     WasteEntryCreate,
 )
 from app.services.inventory_service import (
+    extract_invoice,
     get_analytics,
     get_weekly_recommendations,
     log_waste,
@@ -322,6 +323,27 @@ def get_recommendations(
     """Return weekly reorder recommendations sorted by urgency."""
     restaurant = _get_restaurant(owner, db)
     return get_weekly_recommendations(restaurant.id, db)
+
+
+# ── POST /inventory/invoice/extract ──────────────────────────────────────────
+
+@router.post("/invoice/extract")
+async def extract_invoice_endpoint(
+    file: UploadFile = File(...),
+    owner: Owner = Depends(get_current_owner),
+    db: Session = Depends(get_db),
+):
+    """Upload a supplier invoice (PDF/image/DOCX/CSV) and extract line items via AI."""
+    _get_restaurant(owner, db)
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large (max 10 MB)")
+    try:
+        return extract_invoice(content, file.filename or "invoice", file.content_type or "")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Invoice extraction failed: {e}")
 
 
 # ── GET /inventory/logs ───────────────────────────────────────────────────────
