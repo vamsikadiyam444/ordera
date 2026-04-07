@@ -9,6 +9,7 @@ from app.models.otp import OTPCode
 from app.models.inventory_item import InventoryItem
 from app.models.menu_ingredient import MenuIngredient
 from app.models.inventory_log import InventoryLog
+from app.models.session import OAuthSession
 
 __all__ = [
     "Owner", "Restaurant", "MenuItem",
@@ -16,5 +17,6 @@ __all__ = [
     "Document", "KnowledgeChunk", "CallLog",
     "OTPCode",
     "InventoryItem", "MenuIngredient", "InventoryLog",
+    "OAuthSession",
 ]
 

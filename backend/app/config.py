@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     STRIPE_PRICE_ID_ENTERPRISE: str = ""
 
     # URLs
-    BASE_URL: str = "http://localhost:8000"
+    BASE_URL: str = "http://localhost:8002"
     FRONTEND_URL: str = "http://localhost:5173"
 
     # Email (SMTP) — optional, logs to console if not set
