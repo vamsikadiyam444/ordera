@@ -167,7 +167,7 @@ export default function Inventory() {
           {tab === 'profit' && (
             <div>
               <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 20 }}>
-                Revenue, ingredient costs, and profit per day.{' '}
+                Revenue breakdown for the selected period.{' '}
                 {items.length === 0 && 'Add inventory items and ingredient mappings to see cost data.'}
               </div>
               <ProfitCard />
