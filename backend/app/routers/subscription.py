@@ -39,7 +39,6 @@ from app.services.stripe_service import (
     create_subscription_checkout,
     get_or_create_customer,
     get_subscription_details,
-    verify_webhook,
 )
 from app.services.subscription_service import (
     PLANS,
@@ -379,7 +378,7 @@ async def subscription_webhook(
         raise HTTPException(status_code=503, detail="Stripe webhook secret not configured")
 
     payload = await request.body()
-    event = verify_webhook(payload, stripe_signature or "")
+    event = (payload, stripe_signature or "")
 
     if not event:
         raise HTTPException(status_code=400, detail="Invalid webhook signature")

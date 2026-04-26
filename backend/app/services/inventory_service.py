@@ -256,19 +256,171 @@ def get_weekly_recommendations(restaurant_id: str, db: Session) -> list:
         total_used_7d = sum(log.quantity for log in logs)
         avg_daily = total_used_7d / 7.0
         recommended = (avg_daily * 7) - item.quantity
+        days_left = round(item.quantity / avg_daily, 1) if avg_daily > 0 else 0.0
 
         if recommended > 0:
+            est_cost = round(recommended * item.cost_per_unit, 2)
             recommendations.append({
                 "item_name": item.name,
                 "unit": item.unit,
                 "current_quantity": round(item.quantity, 2),
                 "avg_daily_usage": round(avg_daily, 2),
                 "recommended_order_qty": round(recommended, 2),
+                "cost_per_unit": round(item.cost_per_unit, 2),
+                "estimated_cost": est_cost,
+                "days_remaining": days_left,
             })
 
-    # Sort by recommended qty descending (most urgent first)
-    recommendations.sort(key=lambda x: x["recommended_order_qty"], reverse=True)
+    # Sort by days_remaining ascending (most urgent first)
+    recommendations.sort(key=lambda x: (x["days_remaining"] if x["days_remaining"] > 0 else 999))
     return recommendations
+
+
+# ── Smart weekly grocery order ────────────────────────────────────────────────
+
+def get_weekly_grocery_order(restaurant_id: str, db: Session) -> dict:
+    """
+    Builds a smart next-week grocery order by combining:
+    - Last 7 days of actual order/sales data
+    - Ingredient consumption per item sold
+    - Current stock levels
+    - Projected need for next 7 days
+
+    Returns a manager-ready purchase order with top sellers,
+    full order list with priorities, and totals.
+    """
+    from collections import defaultdict
+
+    cutoff   = datetime.utcnow() - timedelta(days=7)
+    now_str  = datetime.utcnow().strftime("%b %d, %Y")
+    week_from = (datetime.utcnow() - timedelta(days=7)).strftime("%b %d")
+    week_to   = datetime.utcnow().strftime("%b %d")
+    next_from = (datetime.utcnow() + timedelta(days=1)).strftime("%b %d")
+    next_to   = (datetime.utcnow() + timedelta(days=7)).strftime("%b %d, %Y")
+
+    # ── 1. Sales last 7 days ──────────────────────────────────────────────────
+    orders = (
+        db.query(Order)
+        .filter(Order.restaurant_id == restaurant_id, Order.created_at >= cutoff)
+        .all()
+    )
+    order_ids     = [o.id for o in orders]
+    total_orders  = len(orders)
+    total_revenue = round(sum(o.total or 0 for o in orders), 2)
+
+    # Count portions sold per menu item
+    portions_sold: dict = defaultdict(int)
+    for oi in db.query(OrderItem).filter(OrderItem.order_id.in_(order_ids)).all():
+        portions_sold[oi.name] += oi.quantity
+
+    # Top selling items
+    top_sellers = sorted(
+        [{"name": k, "qty_sold": v} for k, v in portions_sold.items()],
+        key=lambda x: -x["qty_sold"]
+    )[:10]
+
+    # ── 2. Ingredient consumption last 7 days ─────────────────────────────────
+    inv_items = (
+        db.query(InventoryItem)
+        .filter(InventoryItem.restaurant_id == restaurant_id)
+        .all()
+    )
+    inv_map    = {i.id: i for i in inv_items}
+    consumed: dict = defaultdict(float)
+
+    for log in (
+        db.query(InventoryLog)
+        .filter(
+            InventoryLog.inventory_item_id.in_(list(inv_map.keys())),
+            InventoryLog.change_type == "used",
+            InventoryLog.timestamp   >= cutoff,
+        )
+        .all()
+    ):
+        consumed[log.inventory_item_id] += log.quantity
+
+    # ── 3. Which menu items use each ingredient ───────────────────────────────
+    # Build inv_item_id -> list of top menu names that use it
+    menu_items = db.query(MenuItem).filter(MenuItem.restaurant_id == restaurant_id).all()
+    menu_map   = {m.id: m.name for m in menu_items}
+
+    ingredient_used_by: dict = defaultdict(list)
+    for mapping in db.query(MenuIngredient).all():
+        if mapping.inventory_item_id in inv_map:
+            menu_name = menu_map.get(mapping.menu_item_id)
+            if menu_name and portions_sold.get(menu_name, 0) > 0:
+                ingredient_used_by[mapping.inventory_item_id].append(
+                    (menu_name, portions_sold[menu_name])
+                )
+
+    # ── 4. Build order list ───────────────────────────────────────────────────
+    order_list = []
+    for inv in inv_items:
+        used_7d    = round(consumed.get(inv.id, 0), 3)
+        avg_daily  = round(used_7d / 7.0, 3)
+        projected  = round(avg_daily * 7, 3)          # need for next 7 days
+        order_qty  = round(max(projected - inv.quantity, 0), 2)
+        days_left  = round(inv.quantity / avg_daily, 1) if avg_daily > 0 else 99.0
+        est_cost   = round(order_qty * inv.cost_per_unit, 2)
+
+        # Priority
+        if inv.quantity == 0:
+            priority = "out_of_stock"
+        elif days_left <= 1:
+            priority = "critical"
+        elif days_left <= 3:
+            priority = "urgent"
+        elif days_left <= 5 or order_qty > 0:
+            priority = "order_soon"
+        else:
+            priority = "adequate"
+
+        # Top 3 menu items that drive this ingredient's demand
+        drivers = sorted(
+            ingredient_used_by.get(inv.id, []),
+            key=lambda x: -x[1]
+        )[:3]
+
+        order_list.append({
+            "item_name":          inv.name,
+            "unit":               inv.unit,
+            "current_stock":      round(inv.quantity, 2),
+            "used_last_7_days":   used_7d,
+            "avg_daily_usage":    avg_daily,
+            "projected_need":     projected,
+            "order_qty":          order_qty,
+            "cost_per_unit":      round(inv.cost_per_unit, 2),
+            "estimated_cost":     est_cost,
+            "days_remaining":     days_left,
+            "priority":           priority,
+            "driven_by":          [d[0] for d in drivers],  # menu items using this
+        })
+
+    # Sort: out_of_stock → critical → urgent → order_soon → adequate
+    priority_rank = {"out_of_stock": 0, "critical": 1, "urgent": 2, "order_soon": 3, "adequate": 4}
+    order_list.sort(key=lambda x: (priority_rank[x["priority"]], x["days_remaining"]))
+
+    # Items that need ordering (exclude adequate with 0 order qty)
+    needs_order   = [i for i in order_list if i["order_qty"] > 0]
+    adequate_list = [i for i in order_list if i["order_qty"] == 0]
+
+    total_cost = round(sum(i["estimated_cost"] for i in needs_order), 2)
+
+    return {
+        "generated_at":     now_str,
+        "week_analyzed":    f"{week_from} – {week_to}",
+        "next_week":        f"{next_from} – {next_to}",
+        "sales_summary": {
+            "total_orders":      total_orders,
+            "total_revenue":     total_revenue,
+            "top_sellers":       top_sellers,
+        },
+        "needs_order":          needs_order,
+        "adequate_stock":       adequate_list,
+        "total_estimated_cost": total_cost,
+        "order_items_count":    len(needs_order),
+        "adequate_items_count": len(adequate_list),
+    }
 
 
 # ── Waste analytics ───────────────────────────────────────────────────────────

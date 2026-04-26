@@ -34,6 +34,7 @@ from app.schemas.inventory_schemas import (
 from app.services.inventory_service import (
     extract_invoice,
     get_analytics,
+    get_weekly_grocery_order,
     get_weekly_recommendations,
     log_waste,
     upload_inventory,
@@ -101,6 +102,81 @@ def list_inventory(
     if low_stock_only:
         responses = [r for r in responses if r.low_stock]
     return responses
+
+
+# ── GET /inventory/weekly_order ───────────────────────────────────────────────
+
+@router.get("/weekly_order")
+def get_weekly_order(
+    owner: Owner = Depends(get_current_owner),
+    db: Session = Depends(get_db),
+):
+    """Smart next-week grocery order: combines sales data, consumption, and current stock."""
+    restaurant = _get_restaurant(owner, db)
+    return get_weekly_grocery_order(restaurant.id, db)
+
+
+# ── GET /inventory/analytics  (must be before /{item_id} wildcard) ────────────
+
+@router.get("/analytics")
+def get_inventory_analytics(
+    days: int = Query(7, ge=1, le=365),
+    owner: Owner = Depends(get_current_owner),
+    db: Session = Depends(get_db),
+):
+    """Return daily profit, waste summary, top cost items, and low stock items."""
+    restaurant = _get_restaurant(owner, db)
+    return get_analytics(restaurant.id, days, db)
+
+
+# ── GET /inventory/recommendations  (must be before /{item_id} wildcard) ──────
+
+@router.get("/recommendations", response_model=List[RecommendationItem])
+def get_recommendations(
+    owner: Owner = Depends(get_current_owner),
+    db: Session = Depends(get_db),
+):
+    """Return weekly reorder recommendations sorted by urgency."""
+    restaurant = _get_restaurant(owner, db)
+    return get_weekly_recommendations(restaurant.id, db)
+
+
+# ── GET /inventory/logs  (must be before /{item_id} wildcard) ─────────────────
+
+@router.get("/logs", response_model=List[InventoryLogResponse])
+def get_inventory_logs_top(
+    item_id: Optional[str] = Query(None),
+    change_type: Optional[str] = Query(None, pattern="^(used|wasted|added)$"),
+    limit: int = Query(100, ge=1, le=500),
+    owner: Owner = Depends(get_current_owner),
+    db: Session = Depends(get_db),
+):
+    """Return recent inventory logs. Filterable by item and change type."""
+    restaurant = _get_restaurant(owner, db)
+    item_ids = [
+        i.id
+        for i in db.query(InventoryItem)
+        .filter(InventoryItem.restaurant_id == restaurant.id)
+        .all()
+    ]
+    query = db.query(InventoryLog).filter(InventoryLog.inventory_item_id.in_(item_ids))
+    if item_id:
+        query = query.filter(InventoryLog.inventory_item_id == item_id)
+    if change_type:
+        query = query.filter(InventoryLog.change_type == change_type)
+    logs = query.order_by(InventoryLog.timestamp.desc()).limit(limit).all()
+    return [
+        InventoryLogResponse(
+            id=log.id,
+            inventory_item_id=log.inventory_item_id,
+            change_type=log.change_type,
+            quantity=log.quantity,
+            order_id=log.order_id,
+            note=log.note,
+            timestamp=log.timestamp,
+        )
+        for log in logs
+    ]
 
 
 # ── PUT /inventory/{id} ───────────────────────────────────────────────────────
@@ -300,31 +376,6 @@ def log_waste_entry(
     log_waste(data.inventory_item_id, data.quantity, data.note, db)
 
 
-# ── GET /inventory/analytics ──────────────────────────────────────────────────
-
-@router.get("/analytics")
-def get_inventory_analytics(
-    days: int = Query(7, ge=1, le=365),
-    owner: Owner = Depends(get_current_owner),
-    db: Session = Depends(get_db),
-):
-    """Return daily profit, waste summary, top cost items, and low stock items."""
-    restaurant = _get_restaurant(owner, db)
-    return get_analytics(restaurant.id, days, db)
-
-
-# ── GET /inventory/recommendations ───────────────────────────────────────────
-
-@router.get("/recommendations", response_model=List[RecommendationItem])
-def get_recommendations(
-    owner: Owner = Depends(get_current_owner),
-    db: Session = Depends(get_db),
-):
-    """Return weekly reorder recommendations sorted by urgency."""
-    restaurant = _get_restaurant(owner, db)
-    return get_weekly_recommendations(restaurant.id, db)
-
-
 # ── POST /inventory/invoice/extract ──────────────────────────────────────────
 
 @router.post("/invoice/extract")
@@ -346,44 +397,3 @@ async def extract_invoice_endpoint(
         raise HTTPException(status_code=500, detail=f"Invoice extraction failed: {e}")
 
 
-# ── GET /inventory/logs ───────────────────────────────────────────────────────
-
-@router.get("/logs", response_model=List[InventoryLogResponse])
-def get_inventory_logs(
-    item_id: Optional[str] = Query(None),
-    change_type: Optional[str] = Query(None, pattern="^(used|wasted|added)$"),
-    limit: int = Query(100, ge=1, le=500),
-    owner: Owner = Depends(get_current_owner),
-    db: Session = Depends(get_db),
-):
-    """Return recent inventory logs. Filterable by item and change type."""
-    restaurant = _get_restaurant(owner, db)
-
-    # Get all inventory item IDs for this restaurant
-    item_ids = [
-        i.id
-        for i in db.query(InventoryItem)
-        .filter(InventoryItem.restaurant_id == restaurant.id)
-        .all()
-    ]
-
-    query = db.query(InventoryLog).filter(InventoryLog.inventory_item_id.in_(item_ids))
-
-    if item_id:
-        query = query.filter(InventoryLog.inventory_item_id == item_id)
-    if change_type:
-        query = query.filter(InventoryLog.change_type == change_type)
-
-    logs = query.order_by(InventoryLog.timestamp.desc()).limit(limit).all()
-    return [
-        InventoryLogResponse(
-            id=log.id,
-            inventory_item_id=log.inventory_item_id,
-            change_type=log.change_type,
-            quantity=log.quantity,
-            order_id=log.order_id,
-            note=log.note,
-            timestamp=log.timestamp,
-        )
-        for log in logs
-    ]

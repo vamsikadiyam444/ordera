@@ -10,6 +10,7 @@ import WasteCard from '../components/inventory/WasteCard'
 import ProfitCard from '../components/inventory/ProfitCard'
 import RecommendationsTable from '../components/inventory/RecommendationsTable'
 import InvoiceUpload from '../components/inventory/InvoiceUpload'
+import NextWeekSuggestion from '../components/inventory/NextWeekSuggestion'
 
 const TABS = [
   { id: 'stock',   label: 'Stock' },
@@ -25,6 +26,7 @@ export default function Inventory() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [showUpload, setShowUpload] = useState(false)
+  const [showNextWeek, setShowNextWeek] = useState(false)
 
   const loadItems = useCallback(() => {
     setLoading(true)
@@ -53,21 +55,43 @@ export default function Inventory() {
             </div>
           </div>
           {tab === 'stock' && (
-            <button
-              onClick={() => setShowUpload((v) => !v)}
-              style={{
-                padding: '8px 18px',
-                borderRadius: 10,
-                fontSize: 13,
-                fontWeight: 600,
-                background: showUpload ? 'var(--surface-2)' : 'var(--primary)',
-                color: showUpload ? 'var(--text-2)' : '#fff',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              {showUpload ? 'Hide Upload' : '+ Upload / Add Items'}
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => setShowNextWeek(true)}
+                style={{
+                  padding: '8px 18px',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  boxShadow: '0 2px 8px rgba(99,102,241,0.25)',
+                }}
+              >
+                <span style={{ fontSize: 15 }}>📦</span>
+                Next Week Suggestion
+              </button>
+              <button
+                onClick={() => setShowUpload((v) => !v)}
+                style={{
+                  padding: '8px 18px',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  background: showUpload ? 'var(--surface-2)' : 'var(--primary)',
+                  color: showUpload ? 'var(--text-2)' : '#fff',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                {showUpload ? 'Hide Upload' : '+ Upload / Add Items'}
+              </button>
+            </div>
           )}
         </div>
 
@@ -189,6 +213,9 @@ export default function Inventory() {
           )}
         </div>
       </div>
+      {showNextWeek && (
+        <NextWeekSuggestion onClose={() => setShowNextWeek(false)} />
+      )}
     </Layout>
   )
 }

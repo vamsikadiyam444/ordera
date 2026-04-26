@@ -12,6 +12,7 @@ class Owner(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     restaurant_name = Column(String, nullable=False)
+    phone = Column(String, nullable=True)          # E.164 format, e.g. +14155551234
     # String instead of Enum — allows "essential", "pro", "enterprise" without DB-level constraint issues
     plan = Column(String, default="essential", nullable=False)
     stripe_customer_id = Column(String, nullable=True)

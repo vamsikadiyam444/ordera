@@ -25,7 +25,7 @@ services:
       - path: ./backend/.env
         required: false   # Won't crash if .env missing; use environment block instead
     environment:
-      DATABASE_URL: postgresql://raguser:ragpassword@db:5432/restaurant_agent
+      : postgresql://raguser:ragpassword@db:5432/restaurant_agent
       APP_ENV: development
     ports:
       - "8000:8000"

@@ -101,3 +101,6 @@ class RecommendationItem(BaseModel):
     current_quantity: float
     avg_daily_usage: float
     recommended_order_qty: float
+    cost_per_unit: float = 0.0
+    estimated_cost: float = 0.0
+    days_remaining: float = 0.0   # current_qty / avg_daily_usage (0 if no usage)

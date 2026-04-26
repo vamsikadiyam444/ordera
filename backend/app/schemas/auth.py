@@ -7,6 +7,7 @@ class OwnerCreate(BaseModel):
     email: EmailStr
     password: str
     restaurant_name: str
+    phone: Optional[str] = None   # E.164 format, e.g. +14155551234
 
 
 class OwnerLogin(BaseModel):
@@ -77,5 +78,10 @@ class LoginRequest(BaseModel):
 
 
 class LoginVerify(BaseModel):
+    email: EmailStr
+    otp_code: str
+
+
+class SignupVerify(BaseModel):
     email: EmailStr
     otp_code: str

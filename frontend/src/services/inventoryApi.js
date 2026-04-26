@@ -43,6 +43,9 @@ export const inventoryApi = {
   getRecommendations: () =>
     api.get('/inventory/recommendations'),
 
+  getWeeklyOrder: () =>
+    api.get('/grocery/weekly_order'),
+
   getLogs: ({ itemId, type, limit = 100 } = {}) => {
     const params = new URLSearchParams()
     if (itemId) params.append('item_id', itemId)
