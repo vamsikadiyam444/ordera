@@ -105,13 +105,15 @@ export default function WasteEntry({ inventoryItems, onSuccess }) {
           style={{
             padding: '10px 24px',
             borderRadius: 8,
-            background: '#fef2f2',
-            color: '#dc2626',
-            border: '1px solid #fecaca',
-            cursor: 'pointer',
+            background: loading ? '#f87171' : '#dc2626',
+            color: '#fff',
+            border: 'none',
+            cursor: loading ? 'not-allowed' : 'pointer',
             fontSize: 13,
             fontWeight: 600,
             alignSelf: 'flex-start',
+            opacity: loading ? 0.75 : 1,
+            transition: 'background 0.15s',
           }}
         >
           {loading ? 'Logging...' : 'Log Waste'}
