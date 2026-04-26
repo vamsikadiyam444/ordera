@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { inventoryApi } from '../../services/inventoryApi'
 
 /* ── priority config ── */
@@ -169,7 +170,7 @@ export default function NextWeekSuggestion({ onClose }) {
     </button>
   )
 
-  return (
+  const modal = (
     <div
       onClick={e => e.target === e.currentTarget && onClose()}
       style={{
@@ -503,4 +504,6 @@ export default function NextWeekSuggestion({ onClose }) {
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }
