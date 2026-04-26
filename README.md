@@ -1,5 +1,5 @@
 <<<<<<< HEAD
-# ordera
+# RingZ.ai
 =======
 # AI Restaurant Phone Agent
 
