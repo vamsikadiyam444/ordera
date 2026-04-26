@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -19,11 +20,14 @@ export default function Layout({ children }) {
   const { owner, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
+
+  const closeSidebar = () => setSidebarOpen(false)
 
   const initials = owner?.restaurant_name
     ? owner.restaurant_name.slice(0, 2).toUpperCase()
@@ -32,9 +36,22 @@ export default function Layout({ children }) {
   return (
     <div className="flex h-screen" style={{ background: 'var(--bg)' }}>
 
+      {/* ── Mobile overlay backdrop ── */}
+      {sidebarOpen && (
+        <div
+          onClick={closeSidebar}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 40,
+            background: 'rgba(0,0,0,0.45)',
+            display: 'none',
+          }}
+          className="mobile-sidebar-backdrop"
+        />
+      )}
+
       {/* ── Sidebar ── */}
       <aside
-        className="flex flex-col flex-shrink-0"
+        className={`flex flex-col flex-shrink-0 layout-sidebar${sidebarOpen ? ' sidebar-open' : ''}`}
         style={{
           width: '232px',
           background: 'var(--sidebar-bg)',
@@ -83,6 +100,7 @@ export default function Layout({ children }) {
                 key={item.path}
                 to={item.path}
                 className={`nav-item ${active ? 'active' : ''}`}
+                onClick={closeSidebar}
               >
                 <Icon size={16} />
                 {item.label}
@@ -172,6 +190,28 @@ export default function Layout({ children }) {
 
       {/* ── Main content ── */}
       <main className="flex-1 overflow-auto">
+        {/* Mobile top bar — hamburger + brand, hidden on desktop */}
+        <div className="mobile-topbar">
+          <button
+            onClick={() => setSidebarOpen(v => !v)}
+            aria-label="Open menu"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: '8px', borderRadius: 8, color: 'var(--text-1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              minWidth: 44, minHeight: 44,
+            }}
+          >
+            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="19" y2="6"/>
+              <line x1="3" y1="12" x2="19" y2="12"/>
+              <line x1="3" y1="18" x2="19" y2="18"/>
+            </svg>
+          </button>
+          <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-1)', letterSpacing: '-0.02em' }}>
+            Ringa AI
+          </span>
+        </div>
         <div className="page-enter">
           {children}
         </div>
