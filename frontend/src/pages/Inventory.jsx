@@ -18,7 +18,7 @@ const TABS = [
   { id: 'profit',  label: 'Profit' },
   { id: 'waste',   label: 'Waste' },
   { id: 'reorder', label: 'Reorder' },
-  { id: 'invoice', label: 'Invoice Scanner' },
+  { id: 'invoice', label: 'Invoices' },
 ]
 
 export default function Inventory() {
