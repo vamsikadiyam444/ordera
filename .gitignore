@@ -25,3 +25,4 @@ secret.yaml
 # Gmail OAuth2 token (contains refresh_token — never commit)
 backend/gmail_token.json
 gmail_token.json
+.gstack/

@@ -49,7 +49,20 @@
       "Bash(curl -s \"http://localhost:8000/openapi.json\")",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(k\\) for k in d['paths'].keys\\(\\) if 'grocery' in k or 'order' in k]\")",
       "Bash(taskkill /F /IM python3.exe)",
-      "PowerShell(Set-Location \"C:\\\\Ringa\\\\backend\"; Start-Process python -ArgumentList \"-m\", \"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\" -WindowStyle Hidden; Start-Sleep -Seconds 5; try { $r = Invoke-WebRequest -Uri \"http://localhost:8000/openapi.json\" -UseBasicParsing; if \\($r.Content -match \"grocery\"\\) { \"GROCERY FOUND\" } else { \"grocery NOT in spec\" } } catch { \"Server not responding: $_\" })"
+      "PowerShell(Set-Location \"C:\\\\Ringa\\\\backend\"; Start-Process python -ArgumentList \"-m\", \"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\" -WindowStyle Hidden; Start-Sleep -Seconds 5; try { $r = Invoke-WebRequest -Uri \"http://localhost:8000/openapi.json\" -UseBasicParsing; if \\($r.Content -match \"grocery\"\\) { \"GROCERY FOUND\" } else { \"grocery NOT in spec\" } } catch { \"Server not responding: $_\" })",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "WebFetch(domain:rinhz-website.vercel.app)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "WebFetch(domain:github.com)",
+      "Bash(venv/Scripts/python.exe -c ' *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":8000\")",
+      "Bash(findstr \":800\")",
+      "Bash(git -C C:/Ringa remote -v)",
+      "Bash(git -C C:/Ringa status)",
+      "Bash(git -C C:/Ringa diff)",
+      "Bash(git -C C:/Ringa add frontend/vite.config.js .gitignore docker-compose.yml .claude/settings.local.json)"
     ]
   }
 }
