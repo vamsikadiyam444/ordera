@@ -25,6 +25,18 @@ def send_sms(to_phone: str, from_phone: str, message: str) -> bool:
         return False
 
 
+def send_otp_sms(to_phone: str, otp_code: str, purpose: str = "signup") -> bool:
+    """Send a verification OTP via SMS using the platform Telnyx number."""
+    if not settings.TELNYX_PHONE_NUMBER:
+        print(f"[SMS OTP] No TELNYX_PHONE_NUMBER configured — OTP for {to_phone}: {otp_code}")
+        return False
+    message = (
+        f"Your Ringa AI verification code is: {otp_code}\n"
+        f"It expires in 10 minutes. Do not share this code."
+    )
+    return send_sms(to_phone, settings.TELNYX_PHONE_NUMBER, message)
+
+
 def send_order_confirmation(
     customer_phone: str,
     restaurant_phone: str,

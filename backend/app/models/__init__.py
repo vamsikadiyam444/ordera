@@ -6,11 +6,15 @@ from app.models.conversation import Conversation
 from app.models.document import Document, KnowledgeChunk
 from app.models.call_log import CallLog
 from app.models.otp import OTPCode
+from app.models.inventory_item import InventoryItem
+from app.models.menu_ingredient import MenuIngredient
+from app.models.inventory_log import InventoryLog
 
 __all__ = [
     "Owner", "Restaurant", "MenuItem",
     "Order", "OrderItem", "Conversation",
     "Document", "KnowledgeChunk", "CallLog",
     "OTPCode",
+    "InventoryItem", "MenuIngredient", "InventoryLog",
 ]
 

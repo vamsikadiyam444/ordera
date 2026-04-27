@@ -7,7 +7,7 @@ from app.schemas.auth import (
     OwnerCreate, OwnerLogin, OwnerResponse, Token,
     UpdateEmail, UpdatePhone, UpdatePassword,
     SendOTP, UpdateEmailWithOTP, UpdatePhoneWithOTP,
-    LoginRequest, LoginVerify,
+    LoginRequest, LoginVerify, SignupVerify,
 )
 from app.services.otp_service import generate_otp, verify_otp
 from app.services.auth_service import (
@@ -39,9 +39,11 @@ def _check_rate_limit(ip: str):
     _login_attempts[ip] = attempts
 
 
-@router.post("/signup", response_model=Token, status_code=201)
+@router.post("/signup", status_code=201)
 def signup(data: OwnerCreate, db: Session = Depends(get_db)):
-    if get_owner_by_email(db, data.email):
+    """Step 1: Create account, send OTP to email and phone."""
+    existing = get_owner_by_email(db, data.email)
+    if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     if len(data.password) < 8:
@@ -51,6 +53,7 @@ def signup(data: OwnerCreate, db: Session = Depends(get_db)):
         email=data.email,
         password_hash=hash_password(data.password),
         restaurant_name=data.restaurant_name,
+        phone=data.phone,
     )
     db.add(owner)
     db.flush()
@@ -63,6 +66,40 @@ def signup(data: OwnerCreate, db: Session = Depends(get_db)):
     db.add(restaurant)
     db.commit()
     db.refresh(owner)
+
+    # Generate OTP and send to email + phone
+    identifier = f"signup:{data.email}"
+    code = generate_otp(db, identifier)
+
+    from app.services.email_service import send_otp_email
+    send_otp_email(data.email, code, purpose="signup")
+
+    if data.phone:
+        from app.services.sms_service import send_otp_sms
+        send_otp_sms(data.phone, code, purpose="signup")
+
+    response: dict = {
+        "pending": True,
+        "message": f"Verification code sent to {data.email}" + (f" and {data.phone}" if data.phone else ""),
+        "email": data.email,
+    }
+    if settings.APP_ENV != "production":
+        response["otp"] = code
+        response["dev_mode"] = True
+
+    return response
+
+
+@router.post("/signup/verify", response_model=Token)
+def signup_verify(data: SignupVerify, db: Session = Depends(get_db)):
+    """Step 2: Verify OTP and issue JWT token."""
+    identifier = f"signup:{data.email}"
+    if not verify_otp(db, identifier, data.otp_code):
+        raise HTTPException(status_code=401, detail="Invalid or expired verification code")
+
+    owner = get_owner_by_email(db, data.email)
+    if not owner:
+        raise HTTPException(status_code=404, detail="Account not found")
 
     token = create_access_token({"sub": owner.id})
     return Token(access_token=token, owner=OwnerResponse.model_validate(owner))

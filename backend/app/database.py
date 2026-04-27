@@ -47,6 +47,7 @@ def run_migrations():
         # so check PRAGMA table_info first.
         sqlite_migrations = [
             ("owners", "usage_alert_sent_at", "ALTER TABLE owners ADD COLUMN usage_alert_sent_at DATETIME"),
+            ("owners", "phone", "ALTER TABLE owners ADD COLUMN phone VARCHAR"),
             ("conversations", "language_detected", "ALTER TABLE conversations ADD COLUMN language_detected VARCHAR"),
         ]
         with engine.connect() as conn:
@@ -67,6 +68,8 @@ def run_migrations():
     column_migrations = [
         # owners: usage_alert_sent_at added after initial deploy
         "ALTER TABLE owners ADD COLUMN IF NOT EXISTS usage_alert_sent_at TIMESTAMPTZ",
+        # owners: phone added for SMS OTP verification at signup
+        "ALTER TABLE owners ADD COLUMN IF NOT EXISTS phone VARCHAR",
         # conversations: language_detected added for multi-language support
         "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS language_detected VARCHAR",
     ]

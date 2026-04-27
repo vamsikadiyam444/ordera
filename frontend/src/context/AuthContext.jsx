@@ -29,8 +29,14 @@ export function AuthProvider({ children }) {
     return res.data
   }
 
-  const signup = async (email, password, restaurantName) => {
-    const res = await authApi.signup({ email, password, restaurant_name: restaurantName })
+  const signup = async (email, password, restaurantName, phone) => {
+    const res = await authApi.signup({ email, password, restaurant_name: restaurantName, phone: phone || null })
+    // Returns { pending: true, email, message } — JWT issued after OTP verify
+    return res.data
+  }
+
+  const signupVerify = async (email, otp_code) => {
+    const res = await authApi.signupVerify({ email, otp_code })
     localStorage.setItem('token', res.data.access_token)
     localStorage.setItem('owner', JSON.stringify(res.data.owner))
     setOwner(res.data.owner)
@@ -45,7 +51,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ owner, setOwner, loginRequest, login, signup, logout, loading }}>
+    <AuthContext.Provider value={{ owner, setOwner, loginRequest, login, signup, signupVerify, logout, loading }}>
       {children}
     </AuthContext.Provider>
   )

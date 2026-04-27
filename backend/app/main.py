@@ -13,6 +13,8 @@ import app.models  # noqa: F401
 
 from app.routers import auth, menu, orders, knowledge, dashboard, voice, payments, restaurant, subscription
 from app.routers import gmail_oauth
+from app.routers import inventory
+from app.routers import grocery
 
 
 AUTO_CONFIRM_SECONDS = 60  # Auto-confirm new orders after 1 minute
@@ -96,6 +98,8 @@ app.include_router(payments.router)
 app.include_router(restaurant.router)
 app.include_router(subscription.router)
 app.include_router(gmail_oauth.router)
+app.include_router(inventory.router)
+app.include_router(grocery.router)
 
 
 @app.get("/")
